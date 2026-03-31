@@ -70,10 +70,14 @@
         <!-- Sa-Token 整合 Thymeleaf -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-dao-redis-jackson</artifactId>
+            <artifactId>sa-token-redis-jackson</artifactId>
             <version>${sa-token.version}</version>
         </dependency>
-        
+        <!-- Redis 客户端 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
         <!-- MinIO 对象存储 -->
         <dependency>
             <groupId>io.minio</groupId>
