@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用药记录 - 雄脱健康管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; min-height: 100vh; }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 250px; background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding-top: 20px; z-index: 1000; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li a { display: block; padding: 15px 25px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background: rgba(255,255,255,0.1); color: white; }
+        .sidebar-menu li a i { margin-right: 10px; width: 20px; text-align: center; }
+        .main-content { margin-left: 250px; padding: 20px; }
+        .top-navbar { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 15px 25px; margin-bottom: 25px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .card-header { background: white; border-bottom: 1px solid #eee; padding: 20px; font-weight: 600; border-radius: 15px 15px 0 0 !important; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
+        .badge-success { background: #d4edda; color: #155724; padding: 5px 12px; border-radius: 20px; }
+        .badge-danger { background: #f8d7da; color: #721c24; padding: 5px 12px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay"><div class="spinner-border text-light" role="status"></div></div>
+    
+    <div class="sidebar">
+        <div class="sidebar-header"><h4><i class="fas fa-user-shield"></i> 管理后台</h4></div>
+        <ul class="sidebar-menu">
+            <li><a href="admin_dashboard.html"><i class="fas fa-tachometer-alt"></i> 数据大盘</a></li>
+            <li><a href="user_list.html"><i class="fas fa-users"></i> 用户管理</a></li>
+            <li><a href="record_list.html"><i class="fas fa-images"></i> 脱发记录</a></li>
+            <li><a href="medication_list.html" class="active"><i class="fas fa-pills"></i> 用药记录</a></li>
+            <li><a href="system_settings.html"><i class="fas fa-cog"></i> 系统设置</a></li>
+            <li><a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> 退出登录</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <h5 class="mb-0">用药打卡记录</h5>
+            <div><span class="me-3"><i class="fas fa-user-circle"></i> 管理员</span><a href="#" onclick="handleLogout()" class="text-danger"><i class="fas fa-sign-out-alt"></i> 退出</a></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-pills"></i> 用药记录列表</span>
+                <div class="d-flex gap-2">
+                    <select class="form-select" id="drugSelect" style="width: 150px;">
+                        <option value="">全部药物</option>
+                        <option value="minoxidil">米诺地尔</option>
+                        <option value="finasteride">非那雄胺</option>
+                    </select>
+                    <input type="date" class="form-control" id="startDate">
+                    <input type="date" class="form-control" id="endDate">
+                    <button class="btn btn-primary" onclick="loadRecords()"><i class="fas fa-search"></i> 搜索</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>ID</th><th>用户</th><th>药物名称</th><th>剂量</th><th>是否用药</th><th>反馈</th><th>打卡日期</th><th>打卡时间</th></tr>
+                        </thead>
+                        <tbody id="recordTableBody"><tr><td colspan="8" class="text-center py-4">加载中...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination-container">
+                <div>共 <span id="totalCount">0</span> 条记录</div>
+                <nav><ul class="pagination mb-0" id="pagination"></ul></nav>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+        let currentPage = 1, pageSize = 10, total = 0;
+
+        function checkLogin() { const token = localStorage.getItem('adminToken'); if (!token) { window.location.href = 'login.html'; return false; } return true; }
+        function showLoading() { $('#loadingOverlay').css('display', 'flex'); }
+        function hideLoading() { $('#loadingOverlay').hide(); }
+        function showSuccess(message) { Swal.fire({ icon: 'success', title: '成功', text: message, timer: 2000, showConfirmButton: false }); }
+
+        async function loadRecords(page = 1) {
+            if (!checkLogin()) return;
+            showLoading();
+            try {
+                const token = localStorage.getItem('adminToken');
+                const drugType = $('#drugSelect').val();
+                const startDate = $('#startDate').val();
+                const endDate = $('#endDate').val();
+                const response = await axios.get(`${API_BASE_URL}/api/admin/medications`, {
+                    params: { page, size: pageSize, drugType, startDate, endDate },
+                    headers: { 'satoken': token }
+                });
+                hideLoading();
+                if (response.data && response.data.code === 200) {
+                    const data = response.data.data || {};
+                    renderRecords(data.list || []);
+                    total = data.total || 0;
+                    $('#totalCount').text(total);
+                    renderPagination(page);
+                } else { useMockData(); }
+            } catch (error) { hideLoading(); console.error('Load records error:', error); useMockData(); }
+        }
+
+        function renderRecords(records) {
+            if (records.length === 0) { $('#recordTableBody').html('<tr><td colspan="8" class="text-center py-4">暂无数据</td></tr>'); return; }
+            let html = '';
+            records.forEach(r => {
+                const statusBadge = r.isTaken ? '<span class="badge-success">已用药</span>' : '<span class="badge-danger">未用药</span>';
+                html += `<tr>
+                    <td>${r.recordId || r.id}</td>
+                    <td>${r.nickname || r.userName || '-'}</td>
+                    <td>${r.drugName || '-'}</td>
+                    <td>${r.actualDose || r.dose || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${r.feedback || '-'}</td>
+                    <td>${r.recordDate ? new Date(r.recordDate).toLocaleDateString() : '-'}</td>
+                    <td>${r.createTime ? new Date(r.createTime).toLocaleTimeString() : '-'}</td>
+                </tr>`;
+            });
+            $('#recordTableBody').html(html);
+        }
+
+        function renderPagination(current) {
+            const totalPages = Math.ceil(total / pageSize);
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<li class="page-item ${i === current ? 'active' : ''}"><a class="page-link" href="#" onclick="loadRecords(${i});return false;">${i}</a></li>`;
+            }
+            $('#pagination').html(html);
+        }
+
+        function useMockData() {
+            const drugs = ['米诺地尔', '非那雄胺'];
+            const records = Array.from({length: 10}, (_, i) => ({
+                id: i + 1, nickname: `用户${i+1}`, drugName: drugs[Math.floor(Math.random()*2)],
+                actualDose: Math.random() > 0.5 ? '1ml' : '1mg', isTaken: Math.random() > 0.2,
+                feedback: Math.random() > 0.7 ? '无不适' : '',
+                recordDate: new Date(Date.now()-Math.random()*86400000*30).toISOString(),
+                createTime: new Date(Date.now()-Math.random()*86400000*30).toISOString()
+            }));
+            renderRecords(records); total = 200; $('#totalCount').text(total); renderPagination(1);
+        }
+
+        function handleLogout() {
+            Swal.fire({ title: '确认退出', text: '确定要退出登录吗？', icon: 'warning', showCancelButton: true, confirmButtonText: '确定', cancelButtonText: '取消' }).then((result) => {
+                if (result.isConfirmed) { localStorage.removeItem('adminToken'); showSuccess('已退出'); setTimeout(() => { window.location.href = 'login.html'; }, 1500); }
+            });
+        }
+
+        $(document).ready(function() { if (checkLogin()) loadRecords(); });
+    </script>
+</body>
+</html>

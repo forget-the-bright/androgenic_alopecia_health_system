@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>改善方案 - 雄脱健康管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f5f7fa; min-height: 100vh; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .navbar-brand, .nav-link { color: white !important; }
+        .main-container { max-width: 1000px; margin: 30px auto; padding: 0 15px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card-header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 15px 15px 0 0 !important; padding: 20px; font-weight: 600; }
+        .plan-item { border: 2px solid #eee; border-radius: 15px; padding: 25px; margin-bottom: 20px; transition: all 0.3s; background: white; }
+        .plan-item:hover { border-color: #4facfe; box-shadow: 0 5px 20px rgba(79,172,254,0.2); }
+        .plan-header { display: flex; align-items: center; margin-bottom: 15px; }
+        .plan-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 15px; }
+        .plan-icon.drug { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .plan-icon.diet { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .plan-icon.habit { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .plan-icon.care { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .plan-title { font-size: 18px; font-weight: 600; color: #333; }
+        .plan-badge { margin-left: auto; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .badge-primary { background: #e8f4ff; color: #4facfe; }
+        .badge-success { background: #e8fff8; color: #11998e; }
+        .plan-content { color: #666; line-height: 1.8; }
+        .plan-content ul { margin: 10px 0; padding-left: 20px; }
+        .tip-card { background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%); border-left: 4px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .tip-title { font-weight: 600; color: #856404; margin-bottom: 10px; }
+        .tip-content { color: #856404; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay"><div class="spinner-border text-light" role="status"></div></div>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-user-md"></i> 雄脱健康管理系统</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="user_center.html"><i class="fas fa-home"></i> 首页</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> 退出</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="main-container">
+        <div class="tip-card">
+            <div class="tip-title"><i class="fas fa-lightbulb"></i> 温馨提示</div>
+            <div class="tip-content">
+                根据您的脱发等级和个人情况，系统为您生成了以下个性化改善方案。请坚持执行并定期记录，以获得最佳效果。
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="fas fa-pills"></i> 药物治疗方案</div>
+            <div class="card-body">
+                <div class="plan-item">
+                    <div class="plan-header">
+                        <div class="plan-icon drug"><i class="fas fa-spray-can"></i></div>
+                        <div class="plan-title">米诺地尔外用治疗</div>
+                        <span class="plan-badge badge-success">推荐</span>
+                    </div>
+                    <div class="plan-content">
+                        <strong>使用方法：</strong>
+                        <ul>
+                            <li>每日 2 次，每次 1ml（约 7 喷）</li>
+                            <li>早晚各一次，涂抹于脱发区域</li>
+                            <li>涂抹后轻轻按摩 3-5 分钟促进吸收</li>
+                            <li>使用后需洗手，避免接触其他部位</li>
+                        </ul>
+                        <strong>注意事项：</strong>
+                        <ul>
+                            <li>初期可能出现暂时性脱发增加（正常现象）</li>
+                            <li>需持续使用 3-6 个月才能看到明显效果</li>
+                            <li>如出现严重头皮刺激，请咨询医生</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="plan-item">
+                    <div class="plan-header">
+                        <div class="plan-icon drug"><i class="fas fa-tablets"></i></div>
+                        <div class="plan-title">非那雄胺口服治疗</div>
+                        <span class="plan-badge badge-primary">处方药</span>
+                    </div>
+                    <div class="plan-content">
+                        <strong>使用方法：</strong>
+                        <ul>
+                            <li>每日 1 次，每次 1mg</li>
+                            <li>固定时间服用，建议早餐后</li>
+                            <li>整片吞服，不要掰开或咀嚼</li>
+                        </ul>
+                        <strong>注意事项：</strong>
+                        <ul>
+                            <li>需在医生指导下使用</li>
+                            <li>少数人可能出现性欲减退等副作用</li>
+                            <li>停药后效果会逐渐消失</li>
+                            <li>女性禁用（特别是孕妇）</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="fas fa-utensils"></i> 饮食调理方案</div>
+            <div class="card-body">
+                <div class="plan-item">
+                    <div class="plan-header">
+                        <div class="plan-icon diet"><i class="fas fa-carrot"></i></div>
+                        <div class="plan-title">营养补充建议</div>
+                    </div>
+                    <div class="plan-content">
+                        <strong>推荐食物：</strong>
+                        <ul>
+                            <li><strong>蛋白质：</strong>鸡蛋、鱼类、瘦肉、豆制品（头发主要成分是角蛋白）</li>
+                            <li><strong>铁质：</strong>菠菜、红肉、动物肝脏（预防缺铁性脱发）</li>
+                            <li><strong>锌元素：</strong>牡蛎、坚果、全谷物（促进毛囊健康）</li>
+                            <li><strong>维生素 B 族：</strong>糙米、燕麦、绿叶蔬菜（促进头发生长）</li>
+                            <li><strong>Omega-3：</strong>深海鱼、亚麻籽、核桃（改善头皮健康）</li>
+                        </ul>
+                        <strong>避免食物：</strong>
+                        <ul>
+                            <li>高糖、高油食物（加重皮脂分泌）</li>
+                            <li>辛辣刺激食物（可能加重炎症）</li>
+                            <li>过量咖啡因和酒精</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="fas fa-bed"></i> 生活习惯调整</div>
+            <div class="card-body">
+                <div class="plan-item">
+                    <div class="plan-header">
+                        <div class="plan-icon habit"><i class="fas fa-clock"></i></div>
+                        <div class="plan-title">日常护理建议</div>
+                    </div>
+                    <div class="plan-content">
+                        <strong>作息规律：</strong>
+                        <ul>
+                            <li>保证每天 7-8 小时充足睡眠</li>
+                            <li>尽量在晚上 11 点前入睡</li>
+                            <li>避免熬夜，减轻精神压力</li>
+                        </ul>
+                        <strong>头皮护理：</strong>
+                        <ul>
+                            <li>选择温和的洗发水，避免过度清洁</li>
+                            <li>洗头水温控制在 37-40℃</li>
+                            <li>避免频繁烫染，减少化学损伤</li>
+                            <li>梳头时动作轻柔，避免拉扯</li>
+                        </ul>
+                        <strong>运动锻炼：</strong>
+                        <ul>
+                            <li>每周至少 3 次有氧运动（跑步、游泳等）</li>
+                            <li>促进血液循环，改善头皮供血</li>
+                            <li>减轻压力，调节内分泌</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="fas fa-heartbeat"></i> 其他辅助疗法</div>
+            <div class="card-body">
+                <div class="plan-item">
+                    <div class="plan-header">
+                        <div class="plan-icon care"><i class="fas fa-hand-sparkles"></i></div>
+                        <div class="plan-title">物理治疗方法</div>
+                    </div>
+                    <div class="plan-content">
+                        <ul>
+                            <li><strong>低能量激光治疗（LLLT）：</strong>可刺激毛囊活性，促进头发生长</li>
+                            <li><strong>微针治疗：</strong>配合药物使用，提高吸收率</li>
+                            <li><strong>头皮按摩：</strong>每日按摩头皮 5-10 分钟，促进血液循环</li>
+                            <li><strong>PRP 疗法：</strong>富血小板血浆注射，需医疗机构操作</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-primary btn-lg px-5" onclick="downloadPlan()">
+                <i class="fas fa-download"></i> 下载方案
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        function checkLogin() { const token = localStorage.getItem('userToken'); if (!token) { window.location.href = 'login.html'; return false; } return true; }
+        function showLoading() { $('#loadingOverlay').css('display', 'flex'); }
+        function hideLoading() { $('#loadingOverlay').hide(); }
+        function showSuccess(message) { Swal.fire({ icon: 'success', title: '成功', text: message, timer: 2000, showConfirmButton: false }); }
+
+        async function loadPlan() {
+            if (!checkLogin()) return;
+            showLoading();
+            try {
+                const token = localStorage.getItem('userToken');
+                const response = await axios.get(`${API_BASE_URL}/api/plan/my`, { headers: { 'satoken': token } });
+                hideLoading();
+                if (response.data && response.data.code === 200) {
+                    // TODO: 根据返回数据动态渲染方案
+                    console.log('Plan loaded:', response.data.data);
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Load plan error:', error);
+            }
+        }
+
+        function downloadPlan() {
+            showSuccess('方案下载功能开发中...');
+        }
+
+        function handleLogout() {
+            Swal.fire({ title: '确认退出', text: '确定要退出登录吗？', icon: 'warning', showCancelButton: true, confirmButtonText: '确定', cancelButtonText: '取消' }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('userToken');
+                    localStorage.removeItem('userInfo');
+                    showSuccess('已退出登录');
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1000);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            if (checkLogin()) loadPlan();
+        });
+    </script>
+</body>
+</html>

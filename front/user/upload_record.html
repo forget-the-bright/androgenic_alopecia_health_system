@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>脱发记录上传 - 雄脱健康管理系统</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        .main-container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+            font-weight: 600;
+        }
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e8eeff;
+        }
+        .upload-icon {
+            font-size: 50px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .preview-item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255,0,0,0.8);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .part-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .part-option {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .part-option:hover {
+            border-color: #667eea;
+        }
+        .part-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .part-option i {
+            font-size: 30px;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        .grade-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .grade-option {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .grade-option:hover {
+            border-color: #667eea;
+        }
+        .grade-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        @media (max-width: 768px) {
+            .part-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-user-md"></i> 雄脱健康管理系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="user_center.html"><i class="fas fa-home"></i> 首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> 退出</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-camera"></i> 脱发记录上传
+            </div>
+            <div class="card-body p-4">
+                <form id="recordForm" onsubmit="handleSubmit(event)">
+                    <!-- Photo Upload -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-image"></i> 上传照片
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoInput').click()">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h5>点击或拖拽上传照片</h5>
+                            <p class="text-muted mb-0">支持 JPG、PNG 格式，最大 5MB</p>
+                            <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="handleFileSelect(event)">
+                        </div>
+                        <div class="preview-container" id="previewContainer"></div>
+                    </div>
+
+                    <!-- Part Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-crosshairs"></i> 拍摄部位
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="part-selector">
+                            <div class="part-option" data-part="top" onclick="selectPart(this)">
+                                <i class="fas fa-circle"></i>
+                                <div>头顶</div>
+                            </div>
+                            <div class="part-option" data-part="front" onclick="selectPart(this)">
+                                <i class="fas fa-arrow-up"></i>
+                                <div>前额</div>
+                            </div>
+                            <div class="part-option" data-part="side" onclick="selectPart(this)">
+                                <i class="fas fa-arrows-alt-h"></i>
+                                <div>两侧</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedPart" required>
+                    </div>
+
+                    <!-- Grade Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-chart-line"></i> 脱发等级评估
+                        </label>
+                        <div class="grade-selector">
+                            <div class="grade-option" data-grade="1" onclick="selectGrade(this)">1 级</div>
+                            <div class="grade-option" data-grade="2" onclick="selectGrade(this)">2 级</div>
+                            <div class="grade-option" data-grade="3" onclick="selectGrade(this)">3 级</div>
+                            <div class="grade-option" data-grade="4" onclick="selectGrade(this)">4 级</div>
+                            <div class="grade-option" data-grade="5" onclick="selectGrade(this)">5 级</div>
+                            <div class="grade-option" data-grade="6" onclick="selectGrade(this)">6 级</div>
+                            <div class="grade-option" data-grade="7" onclick="selectGrade(this)">7 级</div>
+                        </div>
+                        <input type="hidden" id="selectedGrade">
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-sticky-note"></i> 备注说明
+                        </label>
+                        <textarea class="form-control" id="notes" rows="4" placeholder="请输入本次记录的备注信息（可选）"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="fas fa-save"></i> 提交记录
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+        let selectedFiles = [];
+
+        // 检查登录状态
+        function checkLogin() {
+            const token = localStorage.getItem('userToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // 显示 Loading
+        function showLoading() {
+            $('#loadingOverlay').css('display', 'flex');
+        }
+
+        // 隐藏 Loading
+        function hideLoading() {
+            $('#loadingOverlay').hide();
+        }
+
+        // 选择部位
+        function selectPart(element) {
+            $('.part-option').removeClass('selected');
+            $(element).addClass('selected');
+            $('#selectedPart').val($(element).data('part'));
+        }
+
+        // 选择等级
+        function selectGrade(element) {
+            $('.grade-option').removeClass('selected');
+            $(element).addClass('selected');
+            $('#selectedGrade').val($(element).data('grade'));
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            addFiles(files);
+        }
+
+        // 添加文件
+        function addFiles(files) {
+            for (let file of files) {
+                if (!file.type.startsWith('image/')) {
+                    showError('只能上传图片文件');
+                    continue;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('单个文件大小不能超过 5MB');
+                    continue;
+                }
+                selectedFiles.push(file);
+            }
+            renderPreview();
+        }
+
+        // 渲染预览
+        function renderPreview() {
+            const container = $('#previewContainer');
+            container.empty();
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const item = $(`
+                        <div class="preview-item">
+                            <img src="${e.target.result}" alt="preview">
+                            <button type="button" class="remove-btn" onclick="removeFile(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `);
+                    container.append(item);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 移除文件
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderPreview();
+        }
+
+        // 拖拽上传
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            addFiles(e.dataTransfer.files);
+        });
+
+        // 显示成功提示
+        function showSuccess(message) {
+            Swal.fire({
+                icon: 'success',
+                title: '成功',
+                text: message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // 显示错误提示
+        function showError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: '错误',
+                text: message
+            });
+        }
+
+        // 提交表单
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            if (!checkLogin()) return;
+            
+            const part = $('#selectedPart').val();
+            const grade = $('#selectedGrade').val();
+            const notes = $('#notes').val().trim();
+            
+            if (selectedFiles.length === 0) {
+                showError('请至少上传一张照片');
+                return;
+            }
+            
+            if (!part) {
+                showError('请选择拍摄部位');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const token = localStorage.getItem('userToken');
+                const formData = new FormData();
+                
+                // 添加图片文件
+                selectedFiles.forEach((file, index) => {
+                    formData.append('images', file);
+                });
+                
+                // 添加其他参数
+                formData.append('shotType', part);
+                if (grade) {
+                    formData.append('hairGrade', grade);
+                }
+                if (notes) {
+                    formData.append('notes', notes);
+                }
+                
+                // 调用上传接口
+                const response = await axios.post(`${API_BASE_URL}/api/record/upload`, formData, {
+                    headers: {
+                        'satoken': token,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                
+                hideLoading();
+                
+                if (response.data && response.data.code === 200) {
+                    showSuccess('记录上传成功');
+                    setTimeout(() => {
+                        window.location.href = 'user_center.html';
+                    }, 1500);
+                } else {
+                    showError(response.data.message || '上传失败');
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Upload error:', error);
+                const errorMsg = error.response?.data?.message || error.message || '上传失败，请稍后重试';
+                showError(errorMsg);
+            }
+        }
+
+        // 退出登录
+        function handleLogout() {
+            Swal.fire({
+                title: '确认退出',
+                text: '确定要退出登录吗？',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('userToken');
+                    localStorage.removeItem('userInfo');
+                    showSuccess('已退出登录');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1000);
+                }
+            });
+        }
+
+        // 页面加载时检查登录状态
+        $(document).ready(function() {
+            checkLogin();
+        });
+    </script>
+</body>
+</html>
