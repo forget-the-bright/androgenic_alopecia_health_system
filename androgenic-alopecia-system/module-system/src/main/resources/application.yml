@@ -1,0 +1,79 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: androgenic-alopecia-system
+  
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/androgenic_alopecia?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root123456
+  
+  # Jackson 配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.androgenic.**.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# Sa-Token 配置
+sa-token:
+  # token 名称 (同时也是 cookie 名称)
+  token-name: Authorization
+  # token 有效期，单位 s 默认 30 天，-1 代表永不过期
+  timeout: 2592000
+  # token 最低活跃频率 (单位秒), 如果超过此值未活跃则 token 失效
+  active-timeout: -1
+  # 是否允许同一账号并发登录
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个 token
+  is-share: true
+  # token 风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: true
+  # 是否从 header 读取 token
+  is-read-header: true
+  # 是否从 cookie 读取 token
+  is-read-cookie: false
+
+# MinIO 配置
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: androgenic-alopecia
+  auto-create-bucket: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.androgenic: DEBUG
+    com.baomidou.mybatisplus: DEBUG
