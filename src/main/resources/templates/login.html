@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 毛发健康管理系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .login-header .logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+        }
+        
+        .login-header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .login-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .login-body {
+            padding: 40px 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-wrapper .icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 18px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 14px 12px 44px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: #aaa;
+        }
+        
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .form-check-label {
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .forgot-password {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .login-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .language-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .language-switch a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .language-switch a:hover,
+        .language-switch a.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-container {
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .login-header {
+                padding: 30px 20px;
+            }
+            
+            .login-body {
+                padding: 30px 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 18px;
+            }
+            
+            .login-header .logo {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 语言切换 -->
+    <div class="language-switch">
+        <a href="?lang=zh-CN" class="active">中文</a>
+        <a href="?lang=en-US">English</a>
+    </div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">💇</div>
+                <h1>毛发健康管理系统</h1>
+                <p>欢迎登录</p>
+            </div>
+            
+            <div class="login-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">👤 用户名</label>
+                        <div class="input-wrapper">
+                            <span class="icon">👤</span>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   placeholder="请输入用户名" required autocomplete="username">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">🔒 密码</label>
+                        <div class="input-wrapper">
+                            <span class="icon">🔒</span>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="请输入密码" required autocomplete="current-password">
+                        </div>
+                    </div>
+                    
+                    <div class="form-options">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="remember">
+                            <label class="form-check-label" for="remember">记住我</label>
+                        </div>
+                        <a href="#" class="forgot-password">忘记密码？</a>
+                    </div>
+                    
+                    <button type="submit" class="btn-login">登 录</button>
+                </form>
+                
+                <div class="login-footer">
+                    <span>还没有账号？</span>
+                    <a href="/register.html">立即注册</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(function() {
+            // 页面加载时检查是否有记住的用户名
+            loadRememberedUsername();
+            
+            // 登录表单提交
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                
+                var username = $('#username').val();
+                var password = $('#password').val();
+                var remember = $('#remember').is(':checked');
+                
+                if (!username || !password) {
+                    alert('请输入用户名和密码');
+                    return;
+                }
+                
+                // 发送登录请求
+                $.ajax({
+                    url: '/api/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ 
+                        username: username, 
+                        password: password 
+                    }),
+                    success: function(res) {
+                        if (res.code === 200) {
+                            // 保存 token 和用户信息
+                            localStorage.setItem('token', res.data.token);
+                            localStorage.setItem('userInfo', JSON.stringify(res.data.userInfo));
+                            
+                            // 如果勾选了记住我，保存用户名
+                            if (remember) {
+                                localStorage.setItem('rememberedUsername', username);
+                            } else {
+                                localStorage.removeItem('rememberedUsername');
+                            }
+                            
+                            // 跳转到首页
+                            window.location.href = '/index.html';
+                        } else {
+                            alert(res.msg || '登录失败');
+                        }
+                    },
+                    error: function(xhr) {
+                        var msg = '登录失败';
+                        if (xhr.responseJSON && xhr.responseJSON.msg) {
+                            msg = xhr.responseJSON.msg;
+                        }
+                        alert(msg);
+                    }
+                });
+            });
+        });
+        
+        // 加载记住的用户名
+        function loadRememberedUsername() {
+            var rememberedUsername = localStorage.getItem('rememberedUsername');
+            if (rememberedUsername) {
+                $('#username').val(rememberedUsername);
+                $('#remember').prop('checked', true);
+            }
+        }
+    </script>
+</body>
+</html>

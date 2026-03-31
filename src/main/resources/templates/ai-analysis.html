@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 对比分析 - 毛发健康管理系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        .main-content { padding: 20px; }
+        .analysis-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            color: var(--text-color);
+        }
+        .image-selector {
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .image-selector:hover {
+            border-color: var(--primary-color);
+            background: var(--sidebar-bg);
+        }
+        .image-selector.selected {
+            border-color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .image-selector img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 5px;
+        }
+        .vs-badge {
+            background: var(--primary-gradient);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .result-card {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+        }
+        .trend-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .trend-improve { background: #28a745; }
+        .trend-stable { background: #ffc107; color: #333; }
+        .trend-worsen { background: #dc3545; }
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .history-item {
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <button class="sidebar-toggle me-2" onclick="toggleSidebar()" title="切换侧边栏">
+                    <span class="toggle-icon">⬅️</span>
+                </button>
+                <a class="navbar-brand" href="/index.html">毛发健康管理系统</a>
+            </div>
+            
+            <div class="d-flex align-items-center">
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <div class="language-selector ms-2">
+                    <select onchange="setLanguage(this.value)">
+                        <option value="zh-CN">🇨🇳 中文</option>
+                        <option value="en-US">🇺🇸 English</option>
+                    </select>
+                </div>
+                <a class="nav-link" href="#" onclick="doLogout()">🚪 退出</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <div class="col-md-2 sidebar d-none d-md-block">
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="/index.html">
+                        <span class="icon">📊</span>
+                        <span class="text">数据概览</span>
+                    </a>
+                    <a class="nav-link" href="/hair-data.html">
+                        <span class="icon">📷</span>
+                        <span class="text">毛发数据</span>
+                    </a>
+                    <a class="nav-link active" href="/ai-analysis.html">
+                        <span class="icon">🤖</span>
+                        <span class="text">AI 分析</span>
+                    </a>
+                    <a class="nav-link" href="/medicine.html">
+                        <span class="icon">💊</span>
+                        <span class="text">用药管理</span>
+                    </a>
+                    <a class="nav-link" href="/profile.html">
+                        <span class="icon">👤</span>
+                        <span class="text">个人中心</span>
+                    </a>
+                    <a class="nav-link admin-link" href="/admin.html" style="display: none;">
+                        <span class="icon">⚙️</span>
+                        <span class="text">管理后台</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-10 main-content">
+                <h4 class="mb-3">🤖 AI 对比分析</h4>
+
+                <div class="analysis-section">
+                    <h5>选择对比照片</h5>
+                    <div class="row mt-4">
+                        <div class="col-md-5">
+                            <label class="form-label">第一张照片（较早）</label>
+                            <div class="image-selector" id="selector1" onclick="selectImage(1)">
+                                <p class="text-muted text-center mt-5">点击选择照片</p>
+                            </div>
+                            <input type="hidden" id="imageId1">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center justify-content-center">
+                            <div class="vs-badge">VS</div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">第二张照片（较晚）</label>
+                            <div class="image-selector" id="selector2" onclick="selectImage(2)">
+                                <p class="text-muted text-center mt-5">点击选择照片</p>
+                            </div>
+                            <input type="hidden" id="imageId2">
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary btn-lg" onclick="startAnalysis()">
+                            🚀 开始分析
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 分析结果 -->
+                <div id="resultSection" style="display: none;">
+                    <div class="result-card">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="score-display" id="resultScore">0</div>
+                                <div>毛发健康评分</div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <span id="resultTrend" class="trend-badge trend-stable">-</span>
+                                <div class="mt-2">变化趋势</div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div id="resultTime">-</div>
+                                <div>分析时间</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="analysis-section mt-3">
+                        <h5>📋 分析报告</h5>
+                        <pre id="resultReport" style="white-space: pre-wrap; background: var(--sidebar-bg); padding: 15px; border-radius: 5px; color: var(--text-color);"></pre>
+                    </div>
+                </div>
+
+                <!-- 历史记录 -->
+                <div class="analysis-section">
+                    <h4>📜 分析历史记录</h4>
+                    <div class="history-list" id="historyList">
+                        <p class="text-muted">暂无分析记录</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 照片选择模态框 -->
+    <div class="modal fade" id="imageSelectModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">选择照片</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="image-grid" id="modalImageGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/layout.js"></script>
+    <script>
+        var currentSelector = 0;
+        var allImages = [];
+
+        $(function() {
+            checkLoginAsync(function() {
+                loadHistory();
+                loadAllImages();
+                checkAdminLink();
+            });
+        });
+
+        function loadAllImages() {
+            $.ajax({
+                url: '/api/image/list',
+                type: 'GET',
+                headers: { 'satoken': getToken() },
+                success: function(res) {
+                    if (res.code === 200) {
+                        allImages = res.data || [];
+                    }
+                }
+            });
+        }
+
+        function selectImage(num) {
+            currentSelector = num;
+            var html = '';
+            if (allImages && allImages.length > 0) {
+                allImages.forEach(function(img) {
+                    html += `
+                        <div style="cursor: pointer; border: 2px solid var(--border-color); border-radius: 5px; overflow: hidden;"
+                             onclick="confirmSelectImage(${img.id}, '${img.fileUrl}')">
+                            <img src="${img.fileUrl}" style="width: 100%; height: 120px; object-fit: cover;">
+                            <div style="padding: 5px; font-size: 12px; text-align: center; color: var(--text-color);">
+                                ${img.part}<br>${img.uploadDate}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p class="text-muted">暂无照片，请先上传照片</p>';
+            }
+            $('#modalImageGrid').html(html);
+            $('#imageSelectModal').modal('show');
+        }
+
+        function confirmSelectImage(id, url) {
+            if (currentSelector === 1) {
+                $('#imageId1').val(id);
+                $('#selector1').html('<img src="' + url + '">');
+                $('#selector1').addClass('selected');
+            } else {
+                $('#imageId2').val(id);
+                $('#selector2').html('<img src="' + url + '">');
+                $('#selector2').addClass('selected');
+            }
+            $('#imageSelectModal').modal('hide');
+        }
+
+        function startAnalysis() {
+            var imageId1 = $('#imageId1').val();
+            var imageId2 = $('#imageId2').val();
+
+            if (!imageId1 || !imageId2) {
+                alert('请选择两张照片');
+                return;
+            }
+
+            if (imageId1 === imageId2) {
+                alert('请选择两张不同的照片');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/analysis/analyze',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ imageId1: parseInt(imageId1), imageId2: parseInt(imageId2) }),
+                headers: { 'satoken': getToken() },
+                success: function(res) {
+                    if (res.code === 200) {
+                        showResult(res.data);
+                        loadHistory();
+                    } else {
+                        alert(res.msg || '分析失败');
+                    }
+                },
+                error: function(xhr) {
+                    alert('分析失败：' + (xhr.responseJSON?.msg || '网络错误'));
+                }
+            });
+        }
+
+        function showResult(data) {
+            $('#resultSection').show();
+            $('#resultScore').text(data.score);
+            $('#resultTrend').text(data.trend).removeClass('trend-improve trend-stable trend-worsen')
+                .addClass('trend-' + (data.trend === '改善' ? 'improve' : data.trend === '稳定' ? 'stable' : 'worsen'));
+            $('#resultTime').text(data.analysisTime ? data.analysisTime.substring(0, 16) : '-');
+            $('#resultReport').text(data.reportContent);
+            
+            $('html, body').animate({ scrollTop: $('#resultSection').offset().top - 20 }, 500);
+        }
+
+        function loadHistory() {
+            $.ajax({
+                url: '/api/analysis/list',
+                type: 'GET',
+                headers: { 'satoken': getToken() },
+                success: function(res) {
+                    if (res.code === 200) {
+                        var html = '';
+                        if (res.data && res.data.length > 0) {
+                            res.data.forEach(function(item) {
+                                var trendClass = item.trend === '改善' ? 'trend-improve' : 
+                                                 item.trend === '稳定' ? 'trend-stable' : 'trend-worsen';
+                                html += `
+                                    <div class="history-item">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <strong>评分：${item.score}</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span class="trend-badge ${trendClass}">${item.trend}</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">${item.analysisTime ? item.analysisTime.substring(0, 16) : ''}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${item.id})">查看</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            html = '<p class="text-muted">暂无分析记录</p>';
+                        }
+                        $('#historyList').html(html);
+                    }
+                }
+            });
+        }
+
+        function viewReport(id) {
+            $.ajax({
+                url: '/api/analysis/' + id,
+                type: 'GET',
+                headers: { 'satoken': getToken() },
+                success: function(res) {
+                    if (res.code === 200) {
+                        showResult(res.data);
+                        $('html, body').animate({ scrollTop: $('#resultSection').offset().top - 20 }, 500);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

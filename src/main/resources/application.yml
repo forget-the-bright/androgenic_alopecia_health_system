@@ -1,0 +1,126 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: androgenic-alopecia-health-system
+
+  # Spring MVC 路径匹配配置（解决 Swagger 兼容性问题）
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.3.199:3306/hair_loss_system?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: ks125930.
+  
+  # Thymeleaf 配置
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
+    check-template-location: true
+    enabled: true
+    servlet:
+      content-type: text/html
+  
+  # 静态资源配置
+  web:
+    resources:
+      static-locations: classpath:/static/
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  
+  # 国际化配置
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.hairloss.system.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# Sa-Token 配置
+sa-token:
+  # token 名称
+  token-name: satoken
+  # token 有效期（秒）
+  timeout: 7200
+  # 临时 token 有效期
+  activity-timeout: -1
+  # 是否允许同一账号并发登录
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个 token
+  is-share: true
+  # token 风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: true
+  # 是否从 cookie 中读取 token
+  is-read-cookie: true
+  # 是否从 header 中读取 token
+  is-read-header: true
+
+# MinIO 配置
+minio:
+  endpoint: https://local.wuanwanghao.top:9000
+  access-key: wanghao
+  secret-key: ks125930.
+  bucket-name: hairloss
+
+# AI 接口配置
+ai:
+  analysis:
+    url: https://api.example.com/ai/hair-analysis
+    key: your-api-key
+
+# 系统配置
+system:
+  upload:
+    max-size: 10485760
+
+# Knife4j 配置
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+
+# Swagger 配置
+swagger:
+  title: 雄激素性脱发患者管理与分析系统 API 文档
+  description: 提供毛发数据记录、AI 智能分析、用药管理等功能
+  version: 1.0.0
+  terms-of-service-url: http://localhost:8080
+  contact:
+    name: Hair Loss System
+    email: support@hairloss.com
+    url: http://localhost:8080
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.hairloss.system: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
