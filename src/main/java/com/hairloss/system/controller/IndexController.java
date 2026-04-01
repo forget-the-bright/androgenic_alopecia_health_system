@@ -12,7 +12,7 @@ import org.springframework.web.servlet.view.RedirectView;
 public class IndexController {
 
     @GetMapping("/")
-    public Object index() {
+    public String index() {
         // 已登录跳转到首页，未登录跳转到登录页
         if (StpUtil.isLogin()) {
             return "redirect:/index.html";  // 👈 用这个
