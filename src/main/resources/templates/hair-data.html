@@ -251,8 +251,16 @@
                     <h5 class="modal-title">📷 照片预览</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center bg-light">
-                    <img id="previewImage" src="" style="max-width: 100%; max-height: 80vh;">
+                <div class="modal-body text-center bg-light" id="previewContainer" style="overflow: hidden; position: relative; height: 80vh; cursor: grab;">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; overflow: hidden; transform: translateZ(0);">
+                        <img id="previewImage" src="" style="max-width: 100%; max-height: 100%; transform-origin: center center; user-select: none; -webkit-user-select: none; will-change: transform; pointer-events: none;">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomOut()">➖ 缩小</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetZoom()">🔄 重置</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomIn()">➕ 放大</button>
+                    <span class="ms-2 text-muted" id="zoomLevel">100%</span>
                 </div>
             </div>
         </div>
@@ -494,8 +502,163 @@
 
         function previewImage(url) {
             $('#previewImage').attr('src', url);
+            currentZoom = 1;
+            updateZoom();
             new bootstrap.Modal(document.getElementById('previewModal')).show();
         }
+
+        // 图片缩放功能
+        var currentZoom = 1;
+        var zoomStep = 0.25;
+        var minZoom = 0.25;
+        var maxZoom = 5;
+
+        // 图片拖拽功能
+        var isDragging = false;
+        var startX = 0, startY = 0;
+        var translateX = 0, translateY = 0;
+
+        // 使用 requestAnimationFrame 优化拖拽性能
+        var pendingTransform = false;
+        var pendingZoom = 1;
+        var pendingX = 0;
+        var pendingY = 0;
+
+        function updateTransform() {
+            var img = document.getElementById('previewImage');
+            img.style.transform = 'scale(' + pendingZoom + ') translate(' + pendingX + 'px, ' + pendingY + 'px)';
+            pendingTransform = false;
+        }
+
+        function scheduleTransform() {
+            if (!pendingTransform) {
+                pendingTransform = true;
+                requestAnimationFrame(updateTransform);
+            }
+        }
+
+        function updateZoom() {
+            pendingZoom = currentZoom;
+            pendingX = translateX;
+            pendingY = translateY;
+            scheduleTransform();
+            $('#zoomLevel').text(Math.round(currentZoom * 100) + '%');
+            updateCursor();
+        }
+
+        function updateCursor() {
+            var $container = $('#previewContainer');
+            if (currentZoom > 1) {
+                $container.css('cursor', isDragging ? 'grabbing' : 'grab');
+                $container.attr('title', '拖动图片查看 | 滚轮缩放');
+            } else {
+                $container.css('cursor', 'default');
+                $container.attr('title', '');
+            }
+        }
+
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+                // 缩放时重置位置
+                if (currentZoom <= 1) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+                updateZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            translateX = 0;
+            translateY = 0;
+            updateZoom();
+        }
+
+        // 鼠标滚轮缩放
+        $(document).on('wheel', '#previewModal', function(e) {
+            if ($('#previewModal').hasClass('show')) {
+                e.preventDefault();
+                if (e.originalEvent.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }
+        });
+
+        // 模态框关闭时重置缩放
+        $('#previewModal').on('hidden.bs.modal', function() {
+            resetZoom();
+        });
+
+        // 图片拖拽功能 - 鼠标按下
+        $('#previewContainer').on('mousedown', function(e) {
+            if (currentZoom <= 1) return;
+            isDragging = true;
+            startX = e.pageX - translateX;
+            startY = e.pageY - translateY;
+            $('#previewContainer').css('cursor', 'grabbing');
+            e.preventDefault();
+        });
+
+        // 图片拖拽功能 - 鼠标移动（使用 requestAnimationFrame 优化）
+        var ticking = false;
+        $(document).on('mousemove', function(e) {
+            if (!isDragging || ticking) return;
+            
+            ticking = true;
+            requestAnimationFrame(function() {
+                translateX = e.pageX - startX;
+                translateY = e.pageY - startY;
+                pendingX = translateX;
+                pendingY = translateY;
+                scheduleTransform();
+                ticking = false;
+            });
+        });
+
+        // 图片拖拽功能 - 鼠标释放
+        $(document).on('mouseup mouseleave', function() {
+            if (isDragging) {
+                isDragging = false;
+                updateCursor();
+            }
+        });
+
+        // 触摸支持（移动端）
+        $('#previewContainer').on('touchstart', function(e) {
+            if (currentZoom <= 1) return;
+            isDragging = true;
+            var touch = e.originalEvent.touches[0];
+            startX = touch.pageX - translateX;
+            startY = touch.pageY - translateY;
+            e.preventDefault();
+        });
+
+        $('#previewContainer').on('touchmove', function(e) {
+            if (!isDragging || currentZoom <= 1) return;
+            var touch = e.originalEvent.touches[0];
+            translateX = touch.pageX - startX;
+            translateY = touch.pageY - startY;
+            pendingX = translateX;
+            pendingY = translateY;
+            scheduleTransform();
+            e.preventDefault();
+        });
+
+        $('#previewContainer').on('touchend', function() {
+            isDragging = false;
+            updateCursor();
+        });
 
         function openEditModal(id, part, remark) {
             $('#editImageId').val(id);

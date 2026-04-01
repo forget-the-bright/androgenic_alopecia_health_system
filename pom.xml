@@ -25,6 +25,10 @@
         <minio.version>8.4.3</minio.version>
         <knife4j.version>3.0.3</knife4j.version>
         <hutool.version>5.8.16</hutool.version>
+        <!-- 👇 这三行强制所有插件 UTF-8，真正解决乱码 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
     </properties>
     
     <dependencies>
@@ -73,11 +77,23 @@
             <artifactId>sa-token-redis-jackson</artifactId>
             <version>${sa-token.version}</version>
         </dependency>
+        <!-- 提供 Redis 连接池 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
         <!-- Redis 客户端 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.ulisesbocchio</groupId>
+            <artifactId>jasypt-spring-boot-starter</artifactId>
+            <version>3.0.4</version>
+        </dependency>
+
         <!-- MinIO 对象存储 -->
         <dependency>
             <groupId>io.minio</groupId>
@@ -127,6 +143,18 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.github.forget-the-bright</groupId>
+            <artifactId>HaoUtil</artifactId>
+            <version>1.0.16.9</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.9.24</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -141,6 +169,16 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.ulisesbocchio</groupId>
+                <artifactId>jasypt-maven-plugin</artifactId>
+                <version>3.0.4</version>
+                <configuration>
+                    <!-- 👇 这里指定默认文件为 yml -->
+                    <path>file:src/main/resources/application.yml</path>
                 </configuration>
             </plugin>
         </plugins>
