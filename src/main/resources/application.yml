@@ -15,15 +15,15 @@ spring:
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.3.199:3306/hair_loss_system?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: ks125930.
+    url: jdbc:mysql://${MYSQL_HOST:192.168.3.199}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:hair_loss_system}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:ks125930.}
 
   #redis 配置
   redis:
-    database: 6
-    host: 192.168.3.140
-    port: 30535
+    database: ${REDIS_DATABASE:6}
+    host: ${REDIS_HOST:192.168.3.140}
+    port: ${REDIS_PORT:30535}
     password: ''
     # Redis服务器连接密码（默认为空）
     # password:
@@ -105,15 +105,16 @@ sa-token:
 
 jasypt:
   encryptor:
+    password: ${JASYPT_PASSWORD}
     # 注意：官方说明中只要求password必填，但后面两项也要填上，否则出现错误
     algorithm: PBEWithMD5AndDES
     iv-generator-classname: org.jasypt.iv.NoIvGenerator
 # MinIO 配置
 minio:
-  endpoint: https://local.wuanwanghao.top:9000
-  access-key: ENC(9YrhLGKAohMXuLOT0dhzRg==)
-  secret-key: ENC(u+j9NEKTWDJXi4tdezMS51NYvTNIUkh6)
-  bucket-name: hairloss
+  endpoint: ${MINIO_ENDPOINT:https://local.wuanwanghao.top:9000}
+  access-key: ${MINIO_ACCESS_KEY:ENC(9YrhLGKAohMXuLOT0dhzRg==)}
+  secret-key: ${MINIO_SECRET_KEY:ENC(u+j9NEKTWDJXi4tdezMS51NYvTNIUkh6)}
+  bucket-name: ${MINIO_BUCKET_NAME:hairloss}
 
 # AI 接口配置
 ai:
