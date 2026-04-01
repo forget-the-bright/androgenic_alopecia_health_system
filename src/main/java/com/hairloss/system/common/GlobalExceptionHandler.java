@@ -1,8 +1,7 @@
-package com.hairloss.system.config;
+package com.hairloss.system.common;
 
 import cn.dev33.satoken.exception.NotRoleException;
 import cn.dev33.satoken.exception.NotLoginException;
-import com.hairloss.system.common.Result;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
