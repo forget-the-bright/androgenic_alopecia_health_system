@@ -15,9 +15,8 @@ public class IndexController {
     public String index() {
         // 已登录跳转到首页，未登录跳转到登录页
         if (StpUtil.isLogin()) {
-            return "redirect:/index.html";  // 👈 用这个
-        } else {
-            return "redirect:/login.html";   // 👈 用这个
+            return "index"; 
         }
+        return "login";
     }
 }

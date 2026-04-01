@@ -1,10 +1,7 @@
 package com.hairloss.system;
 
 import com.hairloss.system.utils.ColorTextPlus;
-import org.hao.core.print.ColorText;
-import org.hao.core.print.PrintUtil;
 import org.hao.spring.SpringRunUtil;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**

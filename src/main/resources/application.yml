@@ -2,6 +2,8 @@ server:
   port: 8080
   servlet:
     context-path:
+  #让 SpringBoot 信任 Nginx 传来的 HTTPS 和端口，跳转时自动使用正确协议 + 端口
+  forward-headers-strategy: native
 
 spring:
   application:
