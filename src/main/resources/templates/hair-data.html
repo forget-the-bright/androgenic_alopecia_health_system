@@ -286,6 +286,10 @@
                             </select>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">拍摄时间</label>
+                            <input type="datetime-local" class="form-control" id="editUploadTime" required>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">备注</label>
                             <textarea class="form-control" id="editRemark" rows="3"></textarea>
                         </div>
@@ -441,6 +445,12 @@
                         var html = '';
                         if (allImages.length > 0) {
                             allImages.forEach(function(img) {
+                                // 构建显示时间：优先使用 uploadTime，否则使用 uploadDate
+                                var displayTime = img.uploadTime || img.uploadDate || '-';
+                                if (displayTime.length > 10) {
+                                    displayTime = displayTime.substring(0, 16).replace('T', ' ');
+                                }
+                                
                                 html += `
                                     <div class="image-card" data-id="${img.id}">
                                         <div class="image-checkbox-wrapper">
@@ -450,12 +460,12 @@
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <span class="badge bg-primary">${img.part}</span>
-                                                <small class="text-muted">${img.uploadDate}</small>
+                                                <small class="text-muted" title="上传时间">${displayTime}</small>
                                             </div>
                                             ${img.remark ? '<p class="small text-muted mb-2 text-truncate">📝 ' + img.remark + '</p>' : ''}
                                             <div class="btn-group w-100">
                                                 <button class="btn btn-sm btn-outline-primary flex-fill" onclick="previewImage('${img.fileUrl}')">👁️ 预览</button>
-                                                <button class="btn btn-sm btn-outline-success flex-fill" onclick="openEditModal(${img.id}, '${img.part}', '${img.remark || ''}')">✏️ 编辑</button>
+                                                <button class="btn btn-sm btn-outline-success flex-fill" onclick="openEditModal(${img.id}, '${img.part}', '${img.remark || ''}', '${img.uploadTime || img.uploadDate || ''}')">✏️ 编辑</button>
                                                 <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteImage(${img.id})">🗑️</button>
                                             </div>
                                         </div>
@@ -660,10 +670,14 @@
             updateCursor();
         });
 
-        function openEditModal(id, part, remark) {
+        function openEditModal(id, part, remark, uploadTime) {
             $('#editImageId').val(id);
             $('#editPart').val(part);
             $('#editRemark').val(remark || '');
+            // 格式化时间为 datetime-local 格式
+            if (uploadTime) {
+                $('#editUploadTime').val(toDateTimeLocal(uploadTime));
+            }
             editModal.show();
         }
 
@@ -671,6 +685,7 @@
             var id = $('#editImageId').val();
             var part = $('#editPart').val();
             var remark = $('#editRemark').val();
+            var uploadTime = $('#editUploadTime').val();
 
             if (!part) {
                 alert('请选择部位');
@@ -683,7 +698,8 @@
                 contentType: 'application/json',
                 data: JSON.stringify({
                     part: part,
-                    remark: remark
+                    remark: remark,
+                    uploadTime:uploadTime
                 }),
                 headers: { 'satoken': getToken() },
                 success: function(res) {

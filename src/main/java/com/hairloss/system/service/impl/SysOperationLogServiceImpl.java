@@ -7,10 +7,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hairloss.system.entity.SysOperationLog;
 import com.hairloss.system.mapper.SysOperationLogMapper;
 import com.hairloss.system.service.SysOperationLogService;
+import com.hairloss.system.utils.TimeUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -31,7 +31,7 @@ public class SysOperationLogServiceImpl extends ServiceImpl<SysOperationLogMappe
         log.setRequestParam(requestParam != null && requestParam.length() > 500
                 ? requestParam.substring(0, 500) : requestParam);
         log.setIpAddress(ipAddress);
-        log.setOperationTime(LocalDateTime.now());
+        log.setOperationTime(TimeUtil.now());
         log.setStatus(status);
         log.setErrorMsg(errorMsg);
 

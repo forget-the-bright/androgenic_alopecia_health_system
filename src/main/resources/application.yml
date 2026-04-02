@@ -9,6 +9,11 @@ spring:
   application:
     name: androgenic-alopecia-health-system
 
+  # 时区配置（统一使用 GMT+8 北京时间）
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
   # Spring MVC 路径匹配配置（解决 Swagger 兼容性问题）
   mvc:
     pathmatch:
@@ -121,8 +126,9 @@ minio:
 # AI 接口配置
 ai:
   analysis:
-    url: https://api.example.com/ai/hair-analysis
-    key: your-api-key
+    url: https://ark.cn-beijing.volces.com/api/v3
+    model: doubao-seed-2-0-pro-260215
+    key: ${DOUBAO_APIKEY:ENC(70v/fZrHVJgGXLobXi82zvcHkqnb8pLc15iKnu2tzLtD2CZP2b0Hvq3bqWE107bM)}
 
 # 系统配置
 system:

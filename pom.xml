@@ -123,13 +123,13 @@
         </dependency>
         
         <!-- Spring Boot DevTools -->
-        <dependency>
+<!--        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        
+        -->
         <!-- Spring Boot Configuration Processor -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -154,6 +154,13 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
             <version>1.9.24</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.volcengine</groupId>
+            <artifactId>volcengine-java-sdk-ark-runtime</artifactId>
+            <version>LATEST</version>
         </dependency>
     </dependencies>
     

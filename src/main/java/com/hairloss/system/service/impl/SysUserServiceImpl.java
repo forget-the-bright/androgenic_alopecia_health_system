@@ -9,6 +9,7 @@ import com.hairloss.system.entity.SysUser;
 import com.hairloss.system.mapper.SysUserMapper;
 import com.hairloss.system.service.SysOperationLogService;
 import com.hairloss.system.service.SysUserService;
+import com.hairloss.system.utils.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +18,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 
 /**
  * 系统用户服务实现类
@@ -73,8 +73,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 登录
         StpUtil.login(user.getId());
 
-        // 更新最后登录时间
-        user.setLastLoginTime(LocalDateTime.now());
+        // 更新最后登录时间（北京时间）
+        user.setLastLoginTime(TimeUtil.now());
         this.updateById(user);
 
         // 记录日志

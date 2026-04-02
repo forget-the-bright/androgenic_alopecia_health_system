@@ -1,5 +1,6 @@
 package com.hairloss.system.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hairloss.system.entity.AiAnalysis;
 
@@ -25,6 +26,15 @@ public interface AiAnalysisService extends IService<AiAnalysis> {
      * @return 分析记录列表
      */
     List<AiAnalysis> getAnalysisList(Long userId);
+
+    /**
+     * 分页获取用户分析记录列表
+     * @param userId 用户 ID
+     * @param pageNum 页码
+     * @param pageSize 每页大小
+     * @return 分页结果
+     */
+    Page<AiAnalysis> getAnalysisPage(Long userId, Integer pageNum, Integer pageSize);
 
     /**
      * 获取分析详情

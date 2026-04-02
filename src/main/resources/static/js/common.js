@@ -100,13 +100,48 @@ function doLogout() {
 // 格式化日期
 function formatDate(dateStr) {
     if (!dateStr) return '-';
-    return dateStr.substring(0, 10);
+    // 如果是完整的日期时间格式，只取日期部分
+    if (dateStr.length >= 10) {
+        return dateStr.substring(0, 10);
+    }
+    return dateStr;
 }
 
-// 格式化日期时间
+// 格式化日期时间（转换为北京时间 GMT+8）
 function formatDateTime(dateStr) {
     if (!dateStr) return '-';
-    return dateStr.substring(0, 16);
+    try {
+        // 如果日期字符串不包含时区信息，则直接返回
+        if (dateStr.indexOf('T') > 0) {
+            // 处理 ISO 格式 2026-04-02T10:30:00
+            return dateStr.replace('T', ' ').substring(0, 16);
+        }
+        // 处理普通格式 2026-04-02 10:30:00
+        if (dateStr.length >= 16) {
+            return dateStr.substring(0, 16);
+        }
+        return dateStr;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+// 转换为 datetime-local 格式（用于编辑）
+function toDateTimeLocal(dateStr) {
+    if (!dateStr) return '';
+    try {
+        // 将 2026-04-02 10:30:00 转换为 2026-04-02T10:30
+        if (dateStr.indexOf(' ') > 0) {
+            return dateStr.replace(' ', 'T').substring(0, 16);
+        }
+        // 如果已经是 ISO 格式
+        if (dateStr.indexOf('T') > 0) {
+            return dateStr.substring(0, 16);
+        }
+        return dateStr;
+    } catch (e) {
+        return '';
+    }
 }
 
 // 显示加载提示

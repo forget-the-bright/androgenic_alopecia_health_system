@@ -1,6 +1,7 @@
 package com.hairloss.system.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,6 +9,7 @@ import com.hairloss.system.entity.UserHairImage;
 import com.hairloss.system.mapper.UserHairImageMapper;
 import com.hairloss.system.service.SysOperationLogService;
 import com.hairloss.system.service.UserHairImageService;
+import com.hairloss.system.utils.TimeUtil;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -113,8 +115,8 @@ public class UserHairImageServiceImpl extends ServiceImpl<UserHairImageMapper, U
             hairImage.setFileName(fileName);
             hairImage.setFileSize(file.getSize());
             hairImage.setFileType(suffix.replace(".", "").toLowerCase());
-            hairImage.setUploadDate(LocalDate.now());
-            hairImage.setUploadTime(LocalDateTime.now());
+            hairImage.setUploadDate(TimeUtil.today());
+            hairImage.setUploadTime(TimeUtil.now());
             hairImage.setRemark(remark);
 
             boolean result = this.save(hairImage);
@@ -230,7 +232,7 @@ public class UserHairImageServiceImpl extends ServiceImpl<UserHairImageMapper, U
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateImage(Long imageId, Long userId, String part, String remark) {
+    public boolean updateImage(Long imageId, Long userId, String part, String remark, String uploadTime) {
         UserHairImage image = this.getById(imageId);
         if (image == null || !image.getUserId().equals(userId)) {
             throw new RuntimeException("照片不存在或无权限修改");
@@ -238,6 +240,20 @@ public class UserHairImageServiceImpl extends ServiceImpl<UserHairImageMapper, U
 
         image.setPart(part);
         image.setRemark(remark);
+        
+        // 解析时间字符串为 LocalDateTime（假设输入格式为 yyyy-MM-dd'T'HH:mm）
+        if (uploadTime != null && !uploadTime.isEmpty()) {
+            try {
+                // 前端传递的格式是 yyyy-MM-dd'T'HH:mm (datetime-local)
+                LocalDateTime localDateTime = LocalDateTime.parse(uploadTime);
+                image.setUploadTime(localDateTime);
+                // 同时更新 uploadDate 以保持一致
+                image.setUploadDate(localDateTime.toLocalDate());
+            } catch (Exception e) {
+                throw new RuntimeException("时间格式错误：" + uploadTime);
+            }
+        }
+        
         boolean result = this.updateById(image);
 
         if (result) {

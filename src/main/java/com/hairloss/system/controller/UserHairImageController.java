@@ -114,8 +114,9 @@ public class UserHairImageController {
         Long userId = StpUtil.getLoginIdAsLong();
         String part = params.get("part");
         String remark = params.get("remark");
-        
-        userHairImageService.updateImage(imageId, userId, part, remark);
+        String uploadTime = params.get("uploadTime");
+
+        userHairImageService.updateImage(imageId, userId, part, remark,uploadTime);
         return Result.success();
     }
 }

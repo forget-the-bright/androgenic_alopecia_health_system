@@ -1,6 +1,7 @@
 package com.hairloss.system.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hairloss.system.common.Result;
 import com.hairloss.system.entity.AiAnalysis;
 import com.hairloss.system.service.AiAnalysisService;
@@ -43,8 +44,18 @@ public class AiAnalysisController {
         return Result.success(analysis);
     }
 
+    @GetMapping("/page")
+    @ApiOperation("分页获取分析记录列表")
+    public Result<Page<AiAnalysis>> getAnalysisPage(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        Page<AiAnalysis> page = aiAnalysisService.getAnalysisPage(userId, pageNum, pageSize);
+        return Result.success(page);
+    }
+
     @GetMapping("/list")
-    @ApiOperation("获取分析记录列表")
+    @ApiOperation("获取分析记录列表（全部）")
     public Result<List<AiAnalysis>> getAnalysisList() {
         Long userId = StpUtil.getLoginIdAsLong();
         List<AiAnalysis> list = aiAnalysisService.getAnalysisList(userId);

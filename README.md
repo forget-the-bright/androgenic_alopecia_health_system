@@ -4,6 +4,12 @@
 
 本系统针对男性雄激素性脱发患者，提供**毛发数据记录、AI 智能分析、用药管理、用户权限管控**一体化服务，实现患者脱发情况可视化追踪、规范化管理。
 
+系统核心功能包括：
+- 📷 **毛发数据管理**：支持多部位照片上传、时间轴展示、分组管理
+- 🤖 **AI 对比分析**：集成火山引擎方舟大模型，专业毛发密度/趋势分析
+- 💊 **用药管理**：自定义用药方案、每日打卡、完成率统计
+- 🔐 **用户权限**：Sa-Token 会话管理、数据隔离、操作日志
+
 ## 技术栈
 
 | 层级 | 技术选型 |
@@ -11,10 +17,11 @@
 | 后端框架 | Spring Boot 2.7.18 |
 | 权限安全 | Sa-Token 1.37.0 + Redis |
 | ORM 框架 | MyBatis-Plus 3.5.3.1 |
-| 前端架构 | Thymeleaf + Bootstrap + jQuery |
+| 前端架构 | Thymeleaf + Bootstrap 5 + jQuery |
 | 接口文档 | Knife4j 3.0.3 (Swagger) |
 | 文件存储 | MinIO 8.4.3 |
 | 数据库 | MySQL 5.7+ (utf8mb4) |
+| AI 接口 | 火山引擎方舟大模型 (doubao-seed-2-0-pro) |
 | 工具类 | Hutool 5.8.16 |
 | 配置加密 | Jasypt 3.0.4 |
 
@@ -31,6 +38,125 @@
 - **数据统计**：全局统计数据查看
 - **系统配置**：MinIO 配置、AI 接口配置、系统参数配置
 - **操作日志**：系统操作日志查看（支持按用户、操作类型、时间筛选）
+
+## 项目结构
+
+### 后端目录
+```
+src/main/java/com/hairloss/system/
+├── HairLossSystemApplication.java    # 启动类
+├── common/                           # 公共类
+│   ├── Result.java                   # 统一返回结果
+│   └── GlobalExceptionHandler.java   # 全局异常处理
+├── config/                           # 配置类
+│   ├── WebConfig.java                # Web 配置
+│   ├── MybatisPlusConfig.java        # MyBatis-Plus 配置
+│   ├── MinioConfig.java              # MinIO 配置
+│   ├── SwaggerConfig.java            # Swagger 配置
+│   ├── I18nConfig.java               # 国际化配置
+│   └── StpInterfaceImpl.java         # Sa-Token 权限实现
+├── controller/                       # 控制器
+│   ├── SysUserController.java        # 用户管理
+│   ├── UserHairImageController.java  # 毛发照片管理
+│   ├── AiAnalysisController.java     # AI 分析管理
+│   ├── UserMedicineController.java   # 用药方案管理
+│   ├── MedicineClockController.java  # 用药打卡管理
+│   ├── AdminController.java          # 管理员功能
+│   └── IndexController.java          # 首页
+├── dto/                              # 数据传输对象
+│   └── AiAnalysisReport.java         # AI 分析报告 DTO
+├── entity/                           # 实体类
+│   ├── SysUser.java                  # 系统用户
+│   ├── UserHairImage.java            # 毛发照片
+│   ├── AiAnalysis.java               # AI 分析记录（含结构化字段）
+│   ├── UserMedicine.java             # 用药方案
+│   ├── MedicineClock.java            # 用药打卡
+│   ├── SysConfig.java                # 系统配置
+│   └── SysOperationLog.java          # 操作日志
+├── mapper/                           # Mapper 接口
+├── service/                          # Service 接口
+│   └── impl/                         # Service 实现类
+├── interceptor/                      # 拦截器
+└── utils/                            # 工具类
+```
+
+### 前端目录
+```
+src/main/resources/
+├── templates/                        # Thymeleaf 页面
+│   ├── index.html                    # 首页（数据概览）
+│   ├── login.html                    # 登录页
+│   ├── register.html                 # 注册页
+│   ├── hair-data.html                # 毛发数据管理
+│   ├── ai-analysis.html              # AI 对比分析（核心功能）
+│   ├── medicine.html                 # 用药管理
+│   ├── profile.html                  # 个人中心
+│   └── admin.html                    # 管理后台
+├── static/                           # 静态资源
+│   ├── css/
+│   │   ├── bootstrap.min.css         # Bootstrap 样式
+│   │   ├── common.css                # 公共样式
+│   │   └── theme.css                 # 主题样式（支持暗黑模式）
+│   └── js/
+│       ├── jquery.min.js             # jQuery 库
+│       ├── bootstrap.min.js          # Bootstrap JS
+│       ├── common.js                 # 公共工具函数
+│       └── layout.js                 # 布局交互（侧边栏、主题切换）
+└── i18n/                             # 国际化资源
+    ├── messages.properties           # 默认语言
+    ├── messages_zh_CN.properties     # 中文
+    └── messages_en_US.properties     # 英文
+```
+
+### 前端页面功能说明
+
+| 页面 | 文件 | 功能描述 |
+|------|------|----------|
+| 首页 | `index.html` | 数据概览、快捷入口、统计卡片 |
+| 登录/注册 | `login.html` / `register.html` | 用户认证、账号注册 |
+| 毛发数据 | `hair-data.html` | 照片上传、时间轴展示、部位筛选、批量管理 |
+| AI 分析 | `ai-analysis.html` | 照片对比、AI 报告展示、历史记录查看 |
+| 用药管理 | `medicine.html` | 方案配置、打卡日历、完成率统计 |
+| 个人中心 | `profile.html` | 个人信息、密码修改、语言设置 |
+| 管理后台 | `admin.html` | 用户管理、系统配置、操作日志 |
+
+### AI 分析功能详解
+
+**后端实现**：
+- 服务类：`AiAnalysisServiceImpl.java`
+- 控制器：`AiAnalysisController.java`
+- 实体类：`AiAnalysis.java`（含 11 个结构化字段）
+- DTO 类：`AiAnalysisReport.java`（AI 响应解析）
+
+**API 接口**：
+```
+POST   /api/analysis/analyze      # 发起 AI 对比分析
+GET    /api/analysis/list         # 获取分析记录列表
+GET    /api/analysis/{id}         # 获取分析详情
+```
+
+**分析报告字段**：
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| score | BigDecimal | 综合评分（0-100） |
+| hairDensityScore | Integer | 毛发密度评分（0-100） |
+| hairLossImproveScore | Integer | 脱发改善评分（0-100） |
+| trend | String | 趋势：改善/稳定/加重 |
+| trendDescription | String | 趋势详细描述 |
+| compareResult | String | 对比分析结果 |
+| keyChanges | String | 关键变化点 |
+| treatmentSuggestion | String | 治疗方案建议 |
+| dailyCare | String | 日常护理建议 |
+| nextStep | String | 下一步建议 |
+| conclusion | String | 总体结论 |
+| analysisPart | String | 分析部位 |
+| timeInterval | String | 时间间隔描述 |
+
+**前端实现**：
+- 照片选择器：支持从已上传照片中选择两张进行对比
+- 加载动画：分析过程中显示进度提示
+- 报告展示：结构化展示评分、趋势、分析、建议等
+- 历史记录：查看过往分析报告
 
 ## 快速开始
 

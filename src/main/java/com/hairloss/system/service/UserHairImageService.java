@@ -78,7 +78,8 @@ public interface UserHairImageService extends IService<UserHairImage> {
      * @param userId 用户 ID
      * @param part 部位
      * @param remark 备注
+     * @param uploadTime 上传时间
      * @return 更新结果
      */
-    boolean updateImage(Long imageId, Long userId, String part, String remark);
+    boolean updateImage(Long imageId, Long userId, String part, String remark,String uploadTime);
 }
