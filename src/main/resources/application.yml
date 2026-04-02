@@ -81,7 +81,7 @@ mybatis-plus:
   type-aliases-package: com.hairloss.system.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: auto
@@ -162,5 +162,5 @@ logging:
 
 hao-util:
   enabled: true
-  print-interface: false
+  print-interface: true
   enable-failsafe: true

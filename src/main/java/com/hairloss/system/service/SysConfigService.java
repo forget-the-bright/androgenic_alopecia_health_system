@@ -19,6 +19,13 @@ public interface SysConfigService extends IService<SysConfig> {
     String getConfigValue(String key);
 
     /**
+     * 根据键获取配置实体
+     * @param key 配置键
+     * @return 配置实体
+     */
+    SysConfig getByKey(String key);
+
+    /**
      * 更新配置
      * @param key 配置键
      * @param value 配置值

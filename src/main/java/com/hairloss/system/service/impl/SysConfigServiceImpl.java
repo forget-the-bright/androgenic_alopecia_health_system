@@ -26,6 +26,12 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
     }
 
     @Override
+    public SysConfig getByKey(String key) {
+        return this.getOne(new LambdaQueryWrapper<SysConfig>()
+                .eq(SysConfig::getConfigKey, key));
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateConfig(String key, String value) {
         SysConfig config = this.getOne(new LambdaQueryWrapper<SysConfig>()
