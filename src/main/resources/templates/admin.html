@@ -349,6 +349,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/common.js"></script>
     <script>
         var currentPage = 1;
@@ -360,7 +364,7 @@
         $(function() {
             checkLoginAsync(function(userInfo) {
                 if (userInfo.role !== 1) {
-                    alert('无权限访问管理后台');
+                    showWarning('无权限访问管理后台');
                     window.location.href = '/index.html';
                     return;
                 }
@@ -376,16 +380,11 @@
 
         // 加载统计数据
         function loadStatistics() {
-            $.ajax({
-                url: '/api/admin/statistics',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        $('#userCount').text(res.data.userCount || 0);
-                        $('#photoCount').text(res.data.photoCount || 0);
-                        $('#analysisCount').text(res.data.analysisCount || 0);
-                    }
+            apiGet('/api/admin/statistics', function(res) {
+                if (res.code === 200) {
+                    $('#userCount').text(res.data.userCount || 0);
+                    $('#photoCount').text(res.data.photoCount || 0);
+                    $('#analysisCount').text(res.data.analysisCount || 0);
                 }
             });
         }
@@ -394,49 +393,44 @@
         function loadUsers(page) {
             page = page || 1;
             var username = $('#searchUsername').val();
-            
-            $.ajax({
-                url: '/api/admin/user/list?pageNum=' + page + '&pageSize=10' + (username ? '&username=' + username : ''),
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        var html = '';
-                        var data = res.data;
-                        if (data && data.records) {
-                            data.records.forEach(function(user) {
-                                var statusHtml = user.status === 1 
-                                    ? '<span class="badge bg-success">启用</span>' 
-                                    : '<span class="badge bg-secondary">禁用</span>';
-                                var roleHtml = user.role === 1 
-                                    ? '<span class="badge bg-primary">管理员</span>' 
-                                    : '<span class="badge bg-info">用户</span>';
-                                html += `
-                                    <tr>
-                                        <td>${user.id}</td>
-                                        <td>${user.username}</td>
-                                        <td>${user.realName || '-'}</td>
-                                        <td>${roleHtml}</td>
-                                        <td>${statusHtml}</td>
-                                        <td>${user.createTime ? user.createTime.substring(0, 16) : ''}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-info" onclick="viewUserDetail(${user.id})">📋 详情</button>
-                                            <button class="btn btn-sm btn-outline-${user.status === 1 ? 'warning' : 'success'}" 
-                                                    onclick="toggleUserStatus(${user.id}, ${user.status === 1 ? 0 : 1})">
-                                                ${user.status === 1 ? '禁用' : '启用'}
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-primary" 
-                                                    onclick="openResetPassword(${user.id})">
-                                                🔑 重置密码
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                        }
-                        $('#userTableBody').html(html);
-                        renderPagination(data.current, data.size, data.total, 'userPagination', loadUsers);
+
+            apiGet('/api/admin/user/list?pageNum=' + page + '&pageSize=10' + (username ? '&username=' + username : ''), function(res) {
+                if (res.code === 200) {
+                    var html = '';
+                    var data = res.data;
+                    if (data && data.records) {
+                        data.records.forEach(function(user) {
+                            var statusHtml = user.status === 1
+                                ? '<span class="badge bg-success">启用</span>'
+                                : '<span class="badge bg-secondary">禁用</span>';
+                            var roleHtml = user.role === 1
+                                ? '<span class="badge bg-primary">管理员</span>'
+                                : '<span class="badge bg-info">用户</span>';
+                            html += `
+                                <tr>
+                                    <td>${user.id}</td>
+                                    <td>${user.username}</td>
+                                    <td>${user.realName || '-'}</td>
+                                    <td>${roleHtml}</td>
+                                    <td>${statusHtml}</td>
+                                    <td>${user.createTime ? user.createTime.substring(0, 16) : ''}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewUserDetail(${user.id})">📋 详情</button>
+                                        <button class="btn btn-sm btn-outline-${user.status === 1 ? 'warning' : 'success'}"
+                                                onclick="toggleUserStatus(${user.id}, ${user.status === 1 ? 0 : 1})">
+                                            ${user.status === 1 ? '禁用' : '启用'}
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                onclick="openResetPassword(${user.id})">
+                                            🔑 重置密码
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
                     }
+                    $('#userTableBody').html(html);
+                    renderPagination(data.current, data.size, data.total, 'userPagination', loadUsers);
                 }
             });
         }
@@ -444,25 +438,20 @@
         // 查看用户详情（模态框）
         function viewUserDetail(userId) {
             currentUserId = userId;
-            
-            $.ajax({
-                url: '/api/admin/user/' + userId,
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        var user = res.data.user;
-                        $('#detailUsername').text(user.username + ' (' + (user.realName || '-') + ')');
-                        $('#detailPhotoCount').text(res.data.photoCount || 0);
-                        $('#detailAnalysisCount').text(res.data.analysisCount || 0);
-                        $('#detailClockDays').text('0'); // 暂时显示 0，需要额外接口获取
-                        
-                        // 重置标签页
-                        showUserTab('photos');
-                        
-                        // 显示模态框
-                        userDetailModal.show();
-                    }
+
+            apiGet('/api/admin/user/' + userId, function(res) {
+                if (res.code === 200) {
+                    var user = res.data.user;
+                    $('#detailUsername').text(user.username + ' (' + (user.realName || '-') + ')');
+                    $('#detailPhotoCount').text(res.data.photoCount || 0);
+                    $('#detailAnalysisCount').text(res.data.analysisCount || 0);
+                    $('#detailClockDays').text('0'); // 暂时显示 0，需要额外接口获取
+
+                    // 重置标签页
+                    showUserTab('photos');
+
+                    // 显示模态框
+                    userDetailModal.show();
                 }
             });
         }
@@ -491,60 +480,50 @@
 
         // 加载用户照片
         function loadUserPhotos(userId) {
-            $.ajax({
-                url: '/api/admin/user/' + userId + '/images',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    var html = '';
-                    if (res.code === 200 && res.data && res.data.length > 0) {
-                        res.data.forEach(function(img) {
-                            html += `
-                                <tr>
-                                    <td>${img.id}</td>
-                                    <td><span class="badge bg-primary">${img.part}</span></td>
-                                    <td>${img.uploadDate}</td>
-                                    <td>${img.remark || '-'}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary" onclick="previewImage('${img.fileUrl}')">👁️ 预览</button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
-                    } else {
-                        html = '<tr><td colspan="5" class="text-center text-muted">暂无照片</td></tr>';
-                    }
-                    $('#userPhotosBody').html(html);
+            apiGet('/api/admin/user/' + userId + '/images', function(res) {
+                var html = '';
+                if (res.code === 200 && res.data && res.data.length > 0) {
+                    res.data.forEach(function(img) {
+                        html += `
+                            <tr>
+                                <td>${img.id}</td>
+                                <td><span class="badge bg-primary">${img.part}</span></td>
+                                <td>${img.uploadDate}</td>
+                                <td>${img.remark || '-'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="previewImage('${img.fileUrl}')">👁️ 预览</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html = '<tr><td colspan="5" class="text-center text-muted">暂无照片</td></tr>';
                 }
+                $('#userPhotosBody').html(html);
             });
         }
 
         // 加载用户分析记录
         function loadUserAnalyses(userId) {
-            $.ajax({
-                url: '/api/admin/user/' + userId + '/analyses',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    var html = '';
-                    if (res.code === 200 && res.data && res.data.length > 0) {
-                        res.data.forEach(function(a) {
-                            var trendClass = a.trend === '改善' ? 'bg-success' : a.trend === '稳定' ? 'bg-warning' : 'bg-danger';
-                            html += `
-                                <tr>
-                                    <td>${a.id}</td>
-                                    <td>${a.score}</td>
-                                    <td><span class="badge ${trendClass}">${a.trend}</span></td>
-                                    <td>${a.analysisTime ? a.analysisTime.substring(0, 16) : ''}</td>
-                                    <td><button class="btn btn-sm btn-outline-primary" onclick="viewAnalysisDetail(${a.id})">📄 查看</button></td>
-                                </tr>
-                            `;
-                        });
-                    } else {
-                        html = '<tr><td colspan="5" class="text-center text-muted">暂无分析记录</td></tr>';
-                    }
-                    $('#userAnalysesBody').html(html);
+            apiGet('/api/admin/user/' + userId + '/analyses', function(res) {
+                var html = '';
+                if (res.code === 200 && res.data && res.data.length > 0) {
+                    res.data.forEach(function(a) {
+                        var trendClass = a.trend === '改善' ? 'bg-success' : a.trend === '稳定' ? 'bg-warning' : 'bg-danger';
+                        html += `
+                            <tr>
+                                <td>${a.id}</td>
+                                <td>${a.score}</td>
+                                <td><span class="badge ${trendClass}">${a.trend}</span></td>
+                                <td>${a.analysisTime ? a.analysisTime.substring(0, 16) : ''}</td>
+                                <td><button class="btn btn-sm btn-outline-primary" onclick="viewAnalysisDetail(${a.id})">📄 查看</button></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html = '<tr><td colspan="5" class="text-center text-muted">暂无分析记录</td></tr>';
                 }
+                $('#userAnalysesBody').html(html);
             });
         }
 
@@ -555,31 +534,26 @@
 
         // 查看分析详情
         function viewAnalysisDetail(id) {
-            $.ajax({
-                url: '/api/analysis/' + id,
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        var a = res.data;
-                        var html = `
-                            <div class="mb-3">
-                                <strong>评分：</strong>${a.score}
-                            </div>
-                            <div class="mb-3">
-                                <strong>趋势：</strong>${a.trend}
-                            </div>
-                            <div class="mb-3">
-                                <strong>分析时间：</strong>${a.analysisTime ? a.analysisTime.substring(0, 19) : ''}
-                            </div>
-                            <div class="mb-3">
-                                <strong>报告内容：</strong>
-                                <pre style="white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 5px;">${a.reportContent}</pre>
-                            </div>
-                        `;
-                        $('#analysisDetail').html(html);
-                        new bootstrap.Modal(document.getElementById('analysisModal')).show();
-                    }
+            apiGet('/api/analysis/' + id, function(res) {
+                if (res.code === 200) {
+                    var a = res.data;
+                    var html = `
+                        <div class="mb-3">
+                            <strong>评分：</strong>${a.score}
+                        </div>
+                        <div class="mb-3">
+                            <strong>趋势：</strong>${a.trend}
+                        </div>
+                        <div class="mb-3">
+                            <strong>分析时间：</strong>${a.analysisTime ? a.analysisTime.substring(0, 19) : ''}
+                        </div>
+                        <div class="mb-3">
+                            <strong>报告内容：</strong>
+                            <pre style="white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 5px;">${a.reportContent}</pre>
+                        </div>
+                    `;
+                    $('#analysisDetail').html(html);
+                    new bootstrap.Modal(document.getElementById('analysisModal')).show();
                 }
             });
         }
@@ -587,22 +561,15 @@
         // 切换用户状态
         function toggleUserStatus(userId, status) {
             var action = status === 1 ? '启用' : '禁用';
-            if (!confirm('确定要' + action + '该用户吗？')) return;
-
-            $.ajax({
-                url: '/api/admin/user/status',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ userId: userId, status: status }),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            showConfirm('确定要' + action + '该用户吗？', '确认操作', function() {
+                apiPost('/api/admin/user/status', { userId: userId, status: status }, function(res) {
                     if (res.code === 200) {
-                        alert('✅ 操作成功');
+                        showSuccess('操作成功');
                         loadUsers();
                     } else {
-                        alert('❌ ' + (res.msg || '操作失败'));
+                        showError(res.msg || '操作失败');
                     }
-                }
+                });
             });
         }
 
@@ -610,23 +577,32 @@
         var resetUserId = null;
         function openResetPassword(userId) {
             resetUserId = userId;
-            var newPassword = prompt('请输入新密码：');
-            if (newPassword) {
-                $.ajax({
-                    url: '/api/admin/user/reset-password',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ userId: userId, newPassword: newPassword }),
-                    headers: { 'satoken': getToken() },
-                    success: function(res) {
-                        if (res.code === 200) {
-                            alert('✅ 密码已重置为：' + newPassword);
-                        } else {
-                            alert('❌ ' + (res.msg || '操作失败'));
-                        }
+            Swal.fire({
+                title: '重置密码',
+                input: 'text',
+                inputLabel: '请输入新密码',
+                inputPlaceholder: '新密码',
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                confirmButtonColor: '#667eea',
+                inputValidator: function(value) {
+                    if (!value) {
+                        return '请输入新密码';
                     }
-                });
-            }
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    var newPassword = result.value;
+                    apiPost('/api/admin/user/reset-password', { userId: resetUserId, newPassword: newPassword }, function(res) {
+                        if (res.code === 200) {
+                            showSuccess('密码已重置为：' + newPassword);
+                        } else {
+                            showError(res.msg || '操作失败');
+                        }
+                    });
+                }
+            });
         }
 
         // 渲染分页
@@ -645,34 +621,29 @@
         function loadConfigs(page) {
             page = page || 1;
             currentConfigPage = page;
-            
-            $.ajax({
-                url: '/api/admin/config/list?pageNum=' + page + '&pageSize=10',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        var html = '';
-                        var data = res.data;
-                        if (data && data.records) {
-                            data.records.forEach(function(config) {
-                                html += `
-                                    <tr>
-                                        <td class="config-key">${config.configKey}</td>
-                                        <td>${config.configValue}</td>
-                                        <td>${config.configType || '-'}</td>
-                                        <td>${config.remark || '-'}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="openEditConfigModal(${config.id}, '${config.configKey}', '${config.configValue}', '${config.configType || ''}', '${config.remark || ''}')">✏️ 编辑</button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(${config.id})">🗑️ 删除</button>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                        }
-                        $('#configTableBody').html(html);
-                        renderPagination(data.current, data.size, data.total, 'configPagination', loadConfigs);
+
+            apiGet('/api/admin/config/list?pageNum=' + page + '&pageSize=10', function(res) {
+                if (res.code === 200) {
+                    var html = '';
+                    var data = res.data;
+                    if (data && data.records) {
+                        data.records.forEach(function(config) {
+                            html += `
+                                <tr>
+                                    <td class="config-key">${config.configKey}</td>
+                                    <td>${config.configValue}</td>
+                                    <td>${config.configType || '-'}</td>
+                                    <td>${config.remark || '-'}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="openEditConfigModal(${config.id}, '${config.configKey}', '${config.configValue}', '${config.configType || ''}', '${config.remark || ''}')">✏️ 编辑</button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(${config.id})">🗑️ 删除</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
                     }
+                    $('#configTableBody').html(html);
+                    renderPagination(data.current, data.size, data.total, 'configPagination', loadConfigs);
                 }
             });
         }
@@ -708,79 +679,67 @@
             };
 
             if (!data.configKey || !data.configValue) {
-                alert('请填写必填项');
+                showError('请填写必填项');
                 return;
             }
 
             var url = id ? '/api/admin/config/' + id : '/api/admin/config';
-            var method = id ? 'PUT' : 'POST';
 
-            $.ajax({
-                url: url,
-                type: method,
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        alert('✅ 保存成功');
-                        configModal.hide();
-                        loadConfigs(currentConfigPage);
-                    } else {
-                        alert('❌ ' + (res.msg || '操作失败'));
-                    }
+            var successCallback = function(res) {
+                if (res.code === 200) {
+                    showSuccess('保存成功');
+                    configModal.hide();
+                    loadConfigs(currentConfigPage);
+                } else {
+                    showError(res.msg || '操作失败');
                 }
-            });
+            };
+
+            if (id) {
+                apiPut(url, data, successCallback);
+            } else {
+                apiPost(url, data, successCallback);
+            }
         }
 
         // 删除配置
         function deleteConfig(id) {
-            if (!confirm('确定要删除这个配置吗？')) return;
-            
-            $.ajax({
-                url: '/api/admin/config/' + id,
-                type: 'DELETE',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            showConfirm('确定要删除这个配置吗？', '确认删除', function() {
+                apiDelete('/api/admin/config/' + id, function(res) {
                     if (res.code === 200) {
-                        alert('✅ 删除成功');
+                        showSuccess('删除成功');
                         loadConfigs(currentConfigPage);
                     } else {
-                        alert('❌ ' + (res.msg || '删除失败'));
+                        showError(res.msg || '删除失败');
                     }
-                }
+                });
             });
         }
 
         // 加载操作日志
         function loadLogs() {
-            $.ajax({
-                url: '/api/admin/log/list?pageNum=1&pageSize=20',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        var html = '';
-                        var data = res.data;
-                        if (data && data.records) {
-                            data.records.slice(0, 10).forEach(function(log) {
-                                var statusHtml = log.status === 1 
-                                    ? '<span class="badge bg-success">成功</span>' 
-                                    : '<span class="badge bg-danger">失败</span>';
-                                html += `
-                                    <tr>
-                                        <td>${log.userId}</td>
-                                        <td>${log.operationType}</td>
-                                        <td>${log.operationDesc}</td>
-                                        <td>${log.ipAddress}</td>
-                                        <td>${log.operationTime ? log.operationTime.substring(0, 16) : ''}</td>
-                                        <td>${statusHtml}</td>
-                                    </tr>
-                                `;
-                            });
-                        }
-                        $('#logTableBody').html(html);
+            apiGet('/api/admin/log/list?pageNum=1&pageSize=20', function(res) {
+                if (res.code === 200) {
+                    var html = '';
+                    var data = res.data;
+                    if (data && data.records) {
+                        data.records.slice(0, 10).forEach(function(log) {
+                            var statusHtml = log.status === 1
+                                ? '<span class="badge bg-success">成功</span>'
+                                : '<span class="badge bg-danger">失败</span>';
+                            html += `
+                                <tr>
+                                    <td>${log.userId}</td>
+                                    <td>${log.operationType}</td>
+                                    <td>${log.operationDesc}</td>
+                                    <td>${log.ipAddress}</td>
+                                    <td>${log.operationTime ? log.operationTime.substring(0, 16) : ''}</td>
+                                    <td>${statusHtml}</td>
+                                </tr>
+                            `;
+                        });
                     }
+                    $('#logTableBody').html(html);
                 }
             });
         }

@@ -1,0 +1,33 @@
+<!-- 
+    公共侧边栏模板
+    使用方式：<th:block th:replace="fragments/sidebar :: sidebar('active-page')" />
+    active-page 可选值：index, hair-data, ai-analysis, medicine, profile, admin
+-->
+<div class="col-md-2 sidebar d-none d-md-block" th:fragment="sidebar(activePage)" id="sidebar">
+    <nav class="nav flex-column">
+        <a class="nav-link" th:classappend="${activePage == 'index'} ? 'active'" href="/index.html">
+            <span class="icon">📊</span>
+            <span class="text">数据概览</span>
+        </a>
+        <a class="nav-link" th:classappend="${activePage == 'hair-data'} ? 'active'" href="/hair-data.html">
+            <span class="icon">📷</span>
+            <span class="text">毛发数据</span>
+        </a>
+        <a class="nav-link" th:classappend="${activePage == 'ai-analysis'} ? 'active'" href="/ai-analysis.html">
+            <span class="icon">🤖</span>
+            <span class="text">AI 分析</span>
+        </a>
+        <a class="nav-link" th:classappend="${activePage == 'medicine'} ? 'active'" href="/medicine.html">
+            <span class="icon">💊</span>
+            <span class="text">用药管理</span>
+        </a>
+        <a class="nav-link" th:classappend="${activePage == 'profile'} ? 'active'" href="/profile.html">
+            <span class="icon">👤</span>
+            <span class="text">个人中心</span>
+        </a>
+        <a class="nav-link admin-link" th:classappend="${activePage == 'admin'} ? 'active'" href="/admin.html" style="display: none;">
+            <span class="icon">⚙️</span>
+            <span class="text">管理后台</span>
+        </a>
+    </nav>
+</div>

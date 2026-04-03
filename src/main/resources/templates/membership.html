@@ -362,6 +362,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/common.js"></script>
     <script src="/static/js/layout.js"></script>
     <script>
@@ -377,15 +381,10 @@
 
         // 加载会员信息
         function loadMembershipInfo() {
-            $.ajax({
-                url: '/api/membership/info',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        membershipInfo = res.data;
-                        renderMembershipInfo();
-                    }
+            apiGet('/api/membership/info', function(res) {
+                if (res.code === 200) {
+                    membershipInfo = res.data;
+                    renderMembershipInfo();
                 }
             });
         }
@@ -439,19 +438,13 @@
 
         // 加载升级信息
         function loadUpgradeInfo() {
-            $.ajax({
-                url: '/api/membership/upgrade-info',  // 使用新接口，不执行升级
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200 && res.data) {
-                        $('#remainingDays').text(res.data.remainingDays || 0);
-                        $('#diffPrice').text(res.data.diffPrice || 0);
-                    }
-                },
-                error: function() {
-                    // 忽略错误
+            apiGet('/api/membership/upgrade-info', function(res) {
+                if (res.code === 200 && res.data) {
+                    $('#remainingDays').text(res.data.remainingDays || 0);
+                    $('#diffPrice').text(res.data.diffPrice || 0);
                 }
+            }, function() {
+                // 忽略错误
             });
         }
 
@@ -471,86 +464,46 @@
 
         // 确认购买
         function confirmPurchase() {
-            $.ajax({
-                url: '/api/membership/purchase',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ membershipLevel: purchaseLevel }),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        showToast('购买成功！', 'success');
-                        $('#purchaseModal').modal('hide');
-                        loadMembershipInfo();
-                    } else {
-                        showToast(res.msg || '购买失败', 'danger');
-                    }
-                },
-                error: function(xhr) {
-                    showToast('购买失败：' + (xhr.responseJSON?.msg || '网络错误'), 'danger');
+            apiPost('/api/membership/purchase', { membershipLevel: purchaseLevel }, function(res) {
+                if (res.code === 200) {
+                    showToast('购买成功！', 'success');
+                    $('#purchaseModal').modal('hide');
+                    loadMembershipInfo();
+                } else {
+                    showToast(res.msg || '购买失败', 'danger');
                 }
+            }, function(xhr) {
+                showToast('购买失败：' + (xhr.responseJSON?.msg || '网络错误'), 'danger');
             });
         }
 
         // 升级会员
         function upgradeMembership() {
-            $.ajax({
-                url: '/api/membership/upgrade',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({}),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200 && res.data) {
-                        $('#upgradeDiffPrice').text(res.data.diffPrice || 0);
-                        new bootstrap.Modal(document.getElementById('upgradeModal')).show();
-                    } else {
-                        showToast(res.msg || '获取升级信息失败', 'danger');
-                    }
-                },
-                error: function(xhr) {
-                    showToast('获取升级信息失败：' + (xhr.responseJSON?.msg || '网络错误'), 'danger');
+            apiPost('/api/membership/upgrade', {}, function(res) {
+                if (res.code === 200 && res.data) {
+                    $('#upgradeDiffPrice').text(res.data.diffPrice || 0);
+                    new bootstrap.Modal(document.getElementById('upgradeModal')).show();
+                } else {
+                    showToast(res.msg || '获取升级信息失败', 'danger');
                 }
+            }, function(xhr) {
+                showToast('获取升级信息失败：' + (xhr.responseJSON?.msg || '网络错误'), 'danger');
             });
         }
 
         // 确认升级
         function confirmUpgrade() {
-            $.ajax({
-                url: '/api/membership/upgrade',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({}),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        showToast('升级成功！', 'success');
-                        $('#upgradeModal').modal('hide');
-                        loadMembershipInfo();
-                    } else {
-                        showToast(res.msg || '升级失败', 'danger');
-                    }
-                },
-                error: function(xhr) {
-                    showToast('升级失败：' + (xhr.responseJSON?.msg || '网络错误'), 'danger');
+            apiPost('/api/membership/upgrade', {}, function(res) {
+                if (res.code === 200) {
+                    showToast('升级成功！', 'success');
+                    $('#upgradeModal').modal('hide');
+                    loadMembershipInfo();
+                } else {
+                    showToast(res.msg || '升级失败', 'danger');
                 }
+            }, function(xhr) {
+                showToast('升级失败：' + (xhr.responseJSON?.msg || '网络错误'), 'danger');
             });
-        }
-
-        // Toast 提示
-        function showToast(message, type) {
-            type = type || 'info';
-            var toast = '<div class="toast-container position-fixed top-0 end-0 p-3">' +
-                        '<div class="toast align-items-center text-white bg-' + type + ' border-0">' +
-                        '<div class="d-flex">' +
-                        '<div class="toast-body">' + message + '</div>' +
-                        '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
-                        '</div></div></div>';
-            $('body').append(toast);
-            var toastEl = $('.toast-container .toast').last();
-            var bsToast = new bootstrap.Toast(toastEl);
-            bsToast.show();
-            setTimeout(function() { toastEl.remove(); }, 3000);
         }
     </script>
 </body>

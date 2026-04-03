@@ -12,6 +12,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
@@ -25,7 +26,26 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 注册 Sa-Token 拦截器 - 对所有路径生效
         registry.addInterceptor(new SaInterceptor(handle -> {
+                    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                    HttpServletResponse response = attributes.getResponse();
+                    HttpServletRequest request = attributes.getRequest();
+
+                    // 1. 获取当前请求的 path（核心代码）
+                    String requestPath = request.getRequestURI();
+
+                    // 2. 打印看看（可选）
+                    System.out.println("当前访问路径：" + requestPath);
+                    boolean login = StpUtil.isLogin();
                     // 登录验证
+                    if (!login && requestPath.contains(".html")) {
+                        // 重定向到登录页（低版本通用写法）
+                        try {
+                            response.sendRedirect("/login.html");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return;
+                    }
                     StpUtil.checkLogin();
                 }))
                 .addPathPatterns("/**")

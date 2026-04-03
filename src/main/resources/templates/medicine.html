@@ -315,6 +315,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/common.js"></script>
     <script src="/static/js/layout.js"></script>
     <script>
@@ -334,11 +338,7 @@
         });
 
         function loadMedicines() {
-            $.ajax({
-                url: '/api/medicine/list',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            apiGet('/api/medicine/list', function(res) {
                     if (res.code === 200) {
                         var html = '';
                         if (res.data && res.data.length > 0) {
@@ -363,7 +363,7 @@
                                                 <div class="mt-2">
                                                     <button class="btn btn-sm btn-outline-primary clock-btn" onclick="showCalendar(${m.id})">📅 日历</button>
                                                     <button class="btn btn-sm btn-outline-success clock-btn" onclick="quickClock(${m.id})">✅ 打卡</button>
-                                                    <button class="btn btn-sm btn-outline-${m.status === 1 ? 'warning' : 'success'} clock-btn" 
+                                                    <button class="btn btn-sm btn-outline-${m.status === 1 ? 'warning' : 'success'} clock-btn"
                                                             onclick="toggleStatus(${m.id}, ${m.status === 1 ? 0 : 1})">
                                                         ${m.status === 1 ? '🔒 停用' : '✅ 启用'}
                                                     </button>
@@ -379,16 +379,11 @@
                         }
                         $('#medicineList').html(html);
                     }
-                }
-            });
+                });
         }
 
         function loadAllStatistics() {
-            $.ajax({
-                url: '/api/clock/all-statistics',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            apiGet('/api/clock/all-statistics', function(res) {
                     if (res.code === 200 && res.data && res.data.length > 0) {
                         var html = '';
                         res.data.forEach(function(stat) {
@@ -406,8 +401,7 @@
                     } else {
                         $('#statsOverview').html('<div class="col-12"><div class="alert alert-info mb-0">📭 暂无打卡统计数据</div></div>');
                     }
-                }
-            });
+                });
         }
 
         function addMedicine() {
@@ -420,65 +414,46 @@
             };
 
             if (!data.medicineName || !data.dosage || !data.takeTime) {
-                alert('请填写必填项');
+                showError('请填写必填项');
                 return;
             }
 
-            $.ajax({
-                url: '/api/medicine/add',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            apiPost('/api/medicine/add', data, function(res) {
                     if (res.code === 200) {
-                        alert('✅ 添加成功');
+                        showSuccess('添加成功');
                         $('#addMedicineModal').modal('hide');
                         $('#addMedicineForm')[0].reset();
                         loadMedicines();
                         loadAllStatistics();
                     } else {
-                        alert('❌ ' + (res.msg || '添加失败'));
+                        showError(res.msg || '添加失败');
                     }
-                }
-            });
+                });
         }
 
         function deleteMedicine(id) {
-            if (!confirm('确定要删除这个用药方案吗？')) return;
-            
-            $.ajax({
-                url: '/api/medicine/' + id,
-                type: 'DELETE',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        alert('✅ 删除成功');
-                        loadMedicines();
-                        loadAllStatistics();
-                    } else {
-                        alert('❌ ' + (res.msg || '删除失败'));
-                    }
-                }
+            showConfirm('确定要删除这个用药方案吗？', '确认删除', function() {
+                apiDelete('/api/medicine/' + id, function(res) {
+                        if (res.code === 200) {
+                            showSuccess('删除成功');
+                            loadMedicines();
+                            loadAllStatistics();
+                        } else {
+                            showError(res.msg || '删除失败');
+                        }
+                    });
             });
         }
 
         function toggleStatus(id, status) {
-            $.ajax({
-                url: '/api/medicine/status',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ medicineId: id, status: status }),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            apiPost('/api/medicine/status', { medicineId: id, status: status }, function(res) {
                     if (res.code === 200) {
-                        alert('✅ 操作成功');
+                        showSuccess('操作成功');
                         loadMedicines();
                     } else {
-                        alert('❌ ' + (res.msg || '操作失败'));
+                        showError(res.msg || '操作失败');
                     }
-                }
-            });
+                });
         }
 
         function quickClock(medicineId) {
@@ -506,11 +481,7 @@
 
             var today = new Date();
             
-            $.ajax({
-                url: '/api/clock/records?medicineId=' + selectedMedicineId + '&month=' + monthStr,
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            apiGet('/api/clock/records?medicineId=' + selectedMedicineId + '&month=' + monthStr, function(res) {
                     clockRecords = {};
                     if (res.code === 200 && res.data) {
                         res.data.forEach(function(r) {
@@ -528,7 +499,7 @@
                         var isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
                         var classList = 'calendar-day';
                         if (isToday) classList += ' today';
-                        
+
                         var record = clockRecords[dateStr];
                         var statusHtml = '';
                         if (record) {
@@ -553,8 +524,7 @@
                     }
 
                     $('#calendarGrid').html(html);
-                }
-            });
+                });
         }
 
         function changeMonth(delta) {
@@ -599,65 +569,49 @@
         }
 
         function submitClockData(medicineId, date, status) {
-            $.ajax({
-                url: '/api/clock/in',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
+            apiPost('/api/clock/in', {
                     medicineId: parseInt(medicineId),
                     date: date,
                     status: status
-                }),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+                }, function(res) {
                     if (res.code === 200) {
-                        alert('✅ 打卡成功');
+                        showSuccess('打卡成功');
                         renderCalendar();
                         loadAllStatistics();
                     } else {
-                        alert('❌ ' + (res.msg || '操作失败'));
+                        showError(res.msg || '操作失败');
                     }
-                },
-                error: function(xhr) {
+                }, function(xhr) {
                     if (xhr.responseJSON && xhr.responseJSON.msg && xhr.responseJSON.msg.includes('已打卡')) {
-                        if (confirm('该日期已有打卡记录，是否要修改？')) {
-                            alert('请联系管理员添加修改功能');
-                        }
+                        showWarning('该日期已有打卡记录');
                     } else {
-                        alert('❌ ' + (xhr.responseJSON?.msg || '网络错误'));
+                        showError(xhr.responseJSON?.msg || '网络错误');
                     }
-                }
-            });
+                });
         }
 
         function clearClock() {
             if (!selectedMedicineId || !selectedDate) return;
-            
+
             var record = clockRecords[selectedDate];
             if (!record || !record.id) {
-                alert('该日期没有打卡记录');
+                showError('该日期没有打卡记录');
                 return;
             }
-            
-            if (!confirm('确定要清除该日期的打卡记录吗？')) return;
-            
-            $.ajax({
-                url: '/api/clock/' + record.id,
-                type: 'DELETE',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        alert('✅ 清除成功');
-                        renderCalendar();
-                        loadAllStatistics();
-                        $('#calendarActionBar').removeClass('show');
-                    } else {
-                        alert('❌ ' + (res.msg || '清除失败'));
-                    }
-                },
-                error: function(xhr) {
-                    alert('❌ ' + (xhr.responseJSON?.msg || '网络错误'));
-                }
+
+            showConfirm('确定要清除该日期的打卡记录吗？', '确认清除', function() {
+                apiDelete('/api/clock/' + record.id, function(res) {
+                        if (res.code === 200) {
+                            showSuccess('清除成功');
+                            renderCalendar();
+                            loadAllStatistics();
+                            $('#calendarActionBar').removeClass('show');
+                        } else {
+                            showError(res.msg || '清除失败');
+                        }
+                    }, function(xhr) {
+                        showError(xhr.responseJSON?.msg || '网络错误');
+                    });
             });
         }
     </script>

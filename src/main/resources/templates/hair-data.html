@@ -305,6 +305,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/common.js"></script>
     <script src="/static/js/layout.js"></script>
     <script>
@@ -358,25 +362,21 @@
                 e.preventDefault();
                 var formData = new FormData(this);
 
-                $.ajax({
-                    url: '/api/image/upload',
-                    type: 'POST',
+                apiRequest('/api/image/upload', {
+                    method: 'POST',
                     data: formData,
                     processData: false,
-                    contentType: false,
-                    headers: { 'satoken': getToken() },
-                    success: function(res) {
-                        if (res.code === 200) {
-                            alert('✅ 上传成功');
-                            $('#uploadForm')[0].reset();
-                            loadImages();
-                        } else {
-                            alert('❌ ' + (res.msg || '上传失败'));
-                        }
-                    },
-                    error: function(xhr) {
-                        alert('❌ 上传失败：' + (xhr.responseJSON?.msg || '网络错误'));
+                    contentType: false
+                }, function(res) {
+                    if (res.code === 200) {
+                        showSuccess('上传成功');
+                        $('#uploadForm')[0].reset();
+                        loadImages();
+                    } else {
+                        showError(res.msg || '上传失败');
                     }
+                }, function(xhr) {
+                    showError('上传失败：' + (xhr.responseJSON?.msg || '网络错误'));
                 });
             });
 
@@ -388,28 +388,19 @@
                 });
 
                 if (selectedIds.length === 0) {
-                    alert('请选择要删除的照片');
+                    showError('请选择要删除的照片');
                     return;
                 }
 
-                if (!confirm('确定要删除选中的 ' + selectedIds.length + ' 张照片吗？')) {
-                    return;
-                }
-
-                $.ajax({
-                    url: '/api/image/batch-delete',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(selectedIds),
-                    headers: { 'satoken': getToken() },
-                    success: function(res) {
+                showConfirm('确定要删除选中的 ' + selectedIds.length + ' 张照片吗？', '确认删除', function() {
+                    apiPost('/api/image/batch-delete', selectedIds, function(res) {
                         if (res.code === 200) {
-                            alert('✅ 删除成功');
+                            showSuccess('删除成功');
                             loadImages();
                         } else {
-                            alert('❌ ' + (res.msg || '删除失败'));
+                            showError(res.msg || '删除失败');
                         }
-                    }
+                    });
                 });
             });
 
@@ -434,53 +425,48 @@
 
             var queryString = params.length > 0 ? '?' + params.join('&') : '';
 
-            $.ajax({
-                url: '/api/image/list' + queryString,
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        allImages = res.data || [];
+            apiGet('/api/image/list' + queryString, function(res) {
+                if (res.code === 200) {
+                    allImages = res.data || [];
 
-                        var html = '';
-                        if (allImages.length > 0) {
-                            allImages.forEach(function(img) {
-                                // 构建显示时间：优先使用 uploadTime，否则使用 uploadDate
-                                var displayTime = img.uploadTime || img.uploadDate || '-';
-                                if (displayTime.length > 10) {
-                                    displayTime = displayTime.substring(0, 16).replace('T', ' ');
-                                }
-                                
-                                html += `
-                                    <div class="image-card" data-id="${img.id}">
-                                        <div class="image-checkbox-wrapper">
-                                            <input class="image-checkbox form-check-input" type="checkbox" data-id="${img.id}">
+                    var html = '';
+                    if (allImages.length > 0) {
+                        allImages.forEach(function(img) {
+                            // 构建显示时间：优先使用 uploadTime，否则使用 uploadDate
+                            var displayTime = img.uploadTime || img.uploadDate || '-';
+                            if (displayTime.length > 10) {
+                                displayTime = displayTime.substring(0, 16).replace('T', ' ');
+                            }
+
+                            html += `
+                                <div class="image-card" data-id="${img.id}">
+                                    <div class="image-checkbox-wrapper">
+                                        <input class="image-checkbox form-check-input" type="checkbox" data-id="${img.id}">
+                                    </div>
+                                    <img src="${img.fileUrl}" onclick="previewImage('${img.fileUrl}')" alt="${img.part}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge bg-primary">${img.part}</span>
+                                            <small class="text-muted" title="上传时间">${displayTime}</small>
                                         </div>
-                                        <img src="${img.fileUrl}" onclick="previewImage('${img.fileUrl}')" alt="${img.part}">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-primary">${img.part}</span>
-                                                <small class="text-muted" title="上传时间">${displayTime}</small>
-                                            </div>
-                                            ${img.remark ? '<p class="small text-muted mb-2 text-truncate">📝 ' + img.remark + '</p>' : ''}
-                                            <div class="btn-group w-100">
-                                                <button class="btn btn-sm btn-outline-primary flex-fill" onclick="previewImage('${img.fileUrl}')">👁️ 预览</button>
-                                                <button class="btn btn-sm btn-outline-success flex-fill" onclick="openEditModal(${img.id}, '${img.part}', '${img.remark || ''}', '${img.uploadTime || img.uploadDate || ''}')">✏️ 编辑</button>
-                                                <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteImage(${img.id})">🗑️</button>
-                                            </div>
+                                        ${img.remark ? '<p class="small text-muted mb-2 text-truncate">📝 ' + img.remark + '</p>' : ''}
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="previewImage('${img.fileUrl}')">👁️ 预览</button>
+                                            <button class="btn btn-sm btn-outline-success flex-fill" onclick="openEditModal(${img.id}, '${img.part}', '${img.remark || ''}', '${img.uploadTime || img.uploadDate || ''}')">✏️ 编辑</button>
+                                            <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteImage(${img.id})">🗑️</button>
                                         </div>
                                     </div>
-                                `;
-                            });
-                        } else {
-                            html = '<div class="col-12 text-center py-5"><p class="text-muted">📭 暂无照片数据</p></div>';
-                        }
-                        $('#imageGrid').html(html);
-                        $('#totalCount').text('共 ' + allImages.length + ' 项');
-                        updateSelectCount();
-                        updateBatchDeleteBtn();
-                        $('#selectAllBtn').text('✅ 全选');
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html = '<div class="col-12 text-center py-5"><p class="text-muted">📭 暂无照片数据</p></div>';
                     }
+                    $('#imageGrid').html(html);
+                    $('#totalCount').text('共 ' + allImages.length + ' 项');
+                    updateSelectCount();
+                    updateBatchDeleteBtn();
+                    $('#selectAllBtn').text('✅ 全选');
                 }
             });
         }
@@ -688,50 +674,37 @@
             var uploadTime = $('#editUploadTime').val();
 
             if (!part) {
-                alert('请选择部位');
+                showError('请选择部位');
                 return;
             }
 
-            $.ajax({
-                url: '/api/image/' + id,
-                type: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    part: part,
-                    remark: remark,
-                    uploadTime:uploadTime
-                }),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        alert('✅ 保存成功');
-                        editModal.hide();
-                        loadImages();
-                    } else {
-                        alert('❌ ' + (res.msg || '保存失败'));
-                    }
-                },
-                error: function(xhr) {
-                    alert('❌ 保存失败：' + (xhr.responseJSON?.msg || '网络错误'));
+            apiPut('/api/image/' + id, {
+                part: part,
+                remark: remark,
+                uploadTime:uploadTime
+            }, function(res) {
+                if (res.code === 200) {
+                    showSuccess('保存成功');
+                    editModal.hide();
+                    loadImages();
+                } else {
+                    showError(res.msg || '保存失败');
                 }
+            }, function(xhr) {
+                showError('保存失败：' + (xhr.responseJSON?.msg || '网络错误'));
             });
         }
 
         function deleteImage(id) {
-            if (!confirm('确定要删除这张照片吗？')) return;
-
-            $.ajax({
-                url: '/api/image/' + id,
-                type: 'DELETE',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
+            showConfirm('确定要删除这张照片吗？', '确认删除', function() {
+                apiDelete('/api/image/' + id, function(res) {
                     if (res.code === 200) {
-                        alert('✅ 删除成功');
+                        showSuccess('删除成功');
                         loadImages();
                     } else {
-                        alert('❌ ' + (res.msg || '删除失败'));
+                        showError(res.msg || '删除失败');
                     }
-                }
+                });
             });
         }
     </script>

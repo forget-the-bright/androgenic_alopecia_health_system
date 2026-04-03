@@ -171,6 +171,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/common.js"></script>
     <script src="/static/js/layout.js"></script>
     <script>
@@ -204,29 +208,23 @@
                 language: $('#language').val()
             };
 
-            $.ajax({
-                url: '/api/user/info',
-                type: 'GET',
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        data.id = res.data.id;
-                        
-                        $.ajax({
-                            url: '/api/user/update-language',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({ language: data.language }),
-                            headers: { 'satoken': getToken() },
-                            success: function(res) {
-                                if (res.code === 200) {
-                                    userInfo.language = data.language;
-                                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
-                                    alert('✅ 保存成功');
-                                }
-                            }
-                        });
-                    }
+            apiGet('/api/user/info', function(res) {
+                if (res.code === 200) {
+                    var data = {
+                        realName: $('#realName').val(),
+                        phone: $('#phone').val(),
+                        email: $('#email').val(),
+                        language: $('#language').val()
+                    };
+                    data.id = res.data.id;
+
+                    apiPost('/api/user/update-language', { language: data.language }, function(res) {
+                        if (res.code === 200) {
+                            userInfo.language = data.language;
+                            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                            showSuccess('保存成功');
+                        }
+                    });
                 }
             });
         }
@@ -237,41 +235,34 @@
             var confirmPassword = $('#confirmPassword').val();
 
             if (!oldPassword || !newPassword) {
-                alert('请填写密码');
+                showError('请填写密码');
                 return;
             }
 
             if (newPassword !== confirmPassword) {
-                alert('两次输入的密码不一致');
+                showError('两次输入的密码不一致');
                 return;
             }
 
             if (newPassword.length < 6) {
-                alert('密码长度至少 6 位');
+                showError('密码长度至少 6 位');
                 return;
             }
 
-            $.ajax({
-                url: '/api/user/change-password',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    oldPassword: oldPassword,
-                    newPassword: newPassword,
-                    confirmPassword: confirmPassword
-                }),
-                headers: { 'satoken': getToken() },
-                success: function(res) {
-                    if (res.code === 200) {
-                        alert('✅ 密码修改成功，请重新登录');
+            apiPost('/api/user/change-password', {
+                oldPassword: oldPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            }, function(res) {
+                if (res.code === 200) {
+                    showSuccess('密码修改成功，即将跳转到登录页面', function() {
                         doLogout();
-                    } else {
-                        alert('❌ ' + (res.msg || '修改失败'));
-                    }
-                },
-                error: function(xhr) {
-                    alert('❌ 修改失败：' + (xhr.responseJSON?.msg || '网络错误'));
+                    });
+                } else {
+                    showError(res.msg || '修改失败');
                 }
+            }, function(xhr) {
+                showError('修改失败：' + (xhr.responseJSON?.msg || '网络错误'));
             });
         }
     </script>
