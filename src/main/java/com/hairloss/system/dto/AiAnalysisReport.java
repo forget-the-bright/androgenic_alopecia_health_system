@@ -2,6 +2,7 @@ package com.hairloss.system.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.volcengine.ark.runtime.model.responses.usage.Usage;
 import lombok.Data;
 
 /**
@@ -120,4 +121,7 @@ public class AiAnalysisReport {
         @JsonProperty("nextStep")
         private String nextStep;
     }
+
+
+    private Usage usageInfo;
 }

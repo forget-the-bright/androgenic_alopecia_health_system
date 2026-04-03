@@ -109,6 +109,10 @@ sa-token:
   is-read-cookie: true
   # 是否从 header 中读取 token
   is-read-header: true
+  # 未登录时的处理（禁用默认的 302 重定向）
+  not-login-view: /api/not-login
+  # 无权限时的处理
+  no-auth-view: /api/no-auth
 
 jasypt:
   encryptor:

@@ -9,11 +9,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hairloss.system.dto.AiAnalysisReport;
 import com.hairloss.system.entity.AiAnalysis;
+import com.hairloss.system.entity.AiAnalysisRequestLog;
 import com.hairloss.system.entity.UserHairImage;
 import com.hairloss.system.mapper.AiAnalysisMapper;
+import com.hairloss.system.mapper.AiAnalysisRequestLogMapper;
 import com.hairloss.system.service.AiAnalysisService;
 import com.hairloss.system.service.SysOperationLogService;
 import com.hairloss.system.service.UserHairImageService;
+import com.hairloss.system.service.UserMembershipService;
 import com.hairloss.system.utils.TimeUtil;
 import com.volcengine.ark.runtime.model.responses.constant.ResponsesConstants;
 import com.volcengine.ark.runtime.model.responses.content.InputContentItemImage;
@@ -27,6 +30,7 @@ import com.volcengine.ark.runtime.model.responses.item.MessageContent;
 import com.volcengine.ark.runtime.model.responses.request.CreateResponsesRequest;
 import com.volcengine.ark.runtime.model.responses.request.ResponsesInput;
 import com.volcengine.ark.runtime.model.responses.response.ResponseObject;
+import com.volcengine.ark.runtime.model.responses.usage.Usage;
 import com.volcengine.ark.runtime.service.ArkService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +43,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 /**
  * AI 分析记录服务实现类
@@ -52,6 +57,12 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
 
     @Autowired
     private SysOperationLogService sysOperationLogService;
+
+    @Autowired
+    private UserMembershipService userMembershipService;
+
+    @Autowired
+    private AiAnalysisRequestLogMapper aiAnalysisRequestLogMapper;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -91,6 +102,12 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AiAnalysis analyze(Long userId, Long imageId1, Long imageId2) {
+        // 会员权限校验
+        Map<String, Object> permissionResult = userMembershipService.checkAnalysisPermission(userId);
+        if (!(Boolean) permissionResult.get("allowed")) {
+            throw new RuntimeException((String) permissionResult.get("reason"));
+        }
+
         // 验证照片是否存在且属于当前用户
         UserHairImage image1 = userHairImageService.getById(imageId1);
         UserHairImage image2 = userHairImageService.getById(imageId2);
@@ -103,18 +120,38 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
             throw new RuntimeException("无权限访问该照片");
         }
 
-        // 调用 AI 接口进行分析
-        AiAnalysisReport report = callAiAnalysis(image1, image2);
+        AiAnalysis analysis = null;
+        boolean success = false;
+        String errorMessage = null;
 
-        // 保存分析记录
-        AiAnalysis analysis = buildAiAnalysis(userId, imageId1, imageId2, report);
-        boolean success = this.save(analysis);
+        try {
+            // 调用 AI 接口进行分析
+            AiAnalysisReport report = callAiAnalysis(image1, image2);
 
-        if (success) {
-            sysOperationLogService.logOperation(userId, "AI_ANALYSIS", "AI 对比分析",
-                    "/api/analysis/analyze", "imageId1=" + imageId1 + ",imageId2=" + imageId2,
-                    getIpAddress(), 1, null);
-            log.info("AI 分析完成，用户 ID: {}, 分析 ID: {}", userId, analysis.getId());
+            // 保存分析记录
+            analysis = buildAiAnalysis(userId, imageId1, imageId2, report);
+            success = this.save(analysis);
+
+            if (success) {
+                // 增加已使用次数
+                userMembershipService.incrementUsedCount(userId);
+
+                // 记录请求日志（成功）
+                logRequest(userId, imageId1, imageId2, analysis.getId(), report.getUsageInfo().getTotalTokens(), true, null);
+
+                sysOperationLogService.logOperation(userId, "AI_ANALYSIS", "AI 对比分析",
+                        "/api/analysis/analyze", "imageId1=" + imageId1 + ",imageId2=" + imageId2,
+                        getIpAddress(), 1, null);
+                log.info("AI 分析完成，用户 ID: {}, 分析 ID: {}", userId, analysis.getId());
+            }
+        } catch (Exception e) {
+            log.error("AI 分析失败", e);
+            errorMessage = e.getMessage();
+
+            // 记录请求日志（失败）
+            logRequest(userId, imageId1, imageId2, null, 0l, false, errorMessage);
+
+            throw new RuntimeException("分析失败：" + errorMessage);
         }
 
         return analysis;
@@ -182,7 +219,7 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
         if (report.getScoreInfo() != null) {
             Integer densityScore = report.getScoreInfo().getHairDensityScore();
             Integer improveScore = report.getScoreInfo().getHairLossImproveScore();
-            
+
             // 综合评分取两个评分的平均值
             if (densityScore != null && improveScore != null) {
                 analysis.setHairDensityScore(densityScore);
@@ -235,7 +272,7 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
      */
     private AiAnalysisReport callAiAnalysis(UserHairImage image1, UserHairImage image2) {
         String apiKey = aiAnalysisKey;
-        
+
         // 计算时间间隔
         String timeInterval = calculateTimeInterval(image1.getUploadDate(), image2.getUploadDate());
 
@@ -276,7 +313,7 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
                     .build();
 
             ResponseObject resp = arkService.createResponse(request);
-            
+
             // 解析响应
             String aiResponse = parseAiResponse(resp);
             arkService.shutdownExecutor();
@@ -285,7 +322,7 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
 
             // 解析 JSON 响应
             AiAnalysisReport report = parseAnalysisReport(aiResponse);
-            
+
             if (report == null) {
                 log.error("AI 响应解析失败，使用备用方案");
                 return createFallbackAnalysis(image1, image2, timeInterval);
@@ -297,10 +334,10 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
                 return createFallbackAnalysis(image1, image2, timeInterval);
             }
 
-            log.info("AI 分析成功，趋势：{}, 评分：{}", 
-                report.getTrendInfo() != null ? report.getTrendInfo().getStatus() : "未知",
-                report.getScoreInfo() != null ? report.getScoreInfo().getHairDensityScore() : "未知");
-
+            log.info("AI 分析成功，趋势：{}, 评分：{}",
+                    report.getTrendInfo() != null ? report.getTrendInfo().getStatus() : "未知",
+                    report.getScoreInfo() != null ? report.getScoreInfo().getHairDensityScore() : "未知");
+            report.setUsageInfo(resp.getUsage());
             return report;
 
         } catch (Exception e) {
@@ -321,7 +358,7 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
         if (days < 0) {
             days = -days;
         }
-        
+
         if (days < 30) {
             return days + "天";
         } else if (days < 365) {
@@ -339,58 +376,58 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
      */
     private String buildAnalysisPrompt(UserHairImage image1, UserHairImage image2, String timeInterval) {
         return StrUtil.format(
-            "你是一位专业的皮肤科毛发医生，擅长雄激素性脱发（雄脱）诊断与对比分析。\n" +
-            "请对用户提供的**两张不同时间的头皮/脱发照片**进行专业、严谨、客观的对比分析。\n" +
-            "\n" +
-            "【任务要求】\n" +
-            "1. 必须基于真实视觉特征，不要编造\n" +
-            "2. 必须输出**标准 JSON 格式**，不要多余文字，不要解释，不要 Markdown\n" +
-            "3. 所有评分必须客观公正，符合医学标准\n" +
-            "\n" +
-            "【图片说明】\n" +
-            "图 1 = 较早时间拍摄\n" +
-            "图 2 = 较近时间拍摄\n" +
-            "\n" +
-            "图 1 部位：{}\n" +
-            "图 1 时间：{}\n" +
-            "图 2 部位：{}\n" +
-            "图 2 时间：{}\n" +
-            "时间间隔：{}\n" +
-            "\n" +
-            "【输出 JSON 结构】（严格遵守，不要添加额外字段）\n" +
-            "{{\n" +
-            "    \"basicInfo\": {{\n" +
-            "        \"part\": \"分析部位（头顶/前额/发旋/鬓角）\",\n" +
-            "        \"timeInterval\": \"时间间隔描述\",\n" +
-            "        \"image1Time\": \"图片 1 时间\",\n" +
-            "        \"image2Time\": \"图片 2 时间\"\n" +
-            "    }},\n" +
-            "    \"score\": {{\n" +
-            "        \"hairDensityScore\": 毛发密度评分（0-100 整数）,\n" +
-            "        \"hairLossImproveScore\": 脱发改善评分（0-100 整数）\n" +
-            "    }},\n" +
-            "    \"trend\": {{\n" +
-            "        \"status\": \"改善/稳定/加重（三选一）\",\n" +
-            "        \"description\": \"详细描述密度、粗细、覆盖度变化\"\n" +
-            "    }},\n" +
-            "    \"analysis\": {{\n" +
-            "        \"compareResult\": \"前后对比详细医学分析\",\n" +
-            "        \"keyChanges\": \"关键点变化（密度、发根、头皮可见度、粗细）\"\n" +
-            "    }},\n" +
-            "    \"suggestion\": {{\n" +
-            "        \"treatmentSuggestion\": \"治疗方案建议\",\n" +
-            "        \"dailyCare\": \"日常护理建议\",\n" +
-            "        \"nextStep\": \"下一步应该做什么\"\n" +
-            "    }},\n" +
-            "    \"conclusion\": \"总体结论一句话\"\n" +
-            "}}\n" +
-            "\n" +
-            "请严格按照以上结构输出 JSON，不要添加任何额外内容，不要 Markdown 格式。",
-            image1.getPart(),
-            image1.getUploadDate(),
-            image2.getPart(),
-            image2.getUploadDate(),
-            timeInterval
+                "你是一位专业的皮肤科毛发医生，擅长雄激素性脱发（雄脱）诊断与对比分析。\n" +
+                        "请对用户提供的**两张不同时间的头皮/脱发照片**进行专业、严谨、客观的对比分析。\n" +
+                        "\n" +
+                        "【任务要求】\n" +
+                        "1. 必须基于真实视觉特征，不要编造\n" +
+                        "2. 必须输出**标准 JSON 格式**，不要多余文字，不要解释，不要 Markdown\n" +
+                        "3. 所有评分必须客观公正，符合医学标准\n" +
+                        "\n" +
+                        "【图片说明】\n" +
+                        "图 1 = 较早时间拍摄\n" +
+                        "图 2 = 较近时间拍摄\n" +
+                        "\n" +
+                        "图 1 部位：{}\n" +
+                        "图 1 时间：{}\n" +
+                        "图 2 部位：{}\n" +
+                        "图 2 时间：{}\n" +
+                        "时间间隔：{}\n" +
+                        "\n" +
+                        "【输出 JSON 结构】（严格遵守，不要添加额外字段）\n" +
+                        "{{\n" +
+                        "    \"basicInfo\": {{\n" +
+                        "        \"part\": \"分析部位（头顶/前额/发旋/鬓角）\",\n" +
+                        "        \"timeInterval\": \"时间间隔描述\",\n" +
+                        "        \"image1Time\": \"图片 1 时间\",\n" +
+                        "        \"image2Time\": \"图片 2 时间\"\n" +
+                        "    }},\n" +
+                        "    \"score\": {{\n" +
+                        "        \"hairDensityScore\": 毛发密度评分（0-100 整数）,\n" +
+                        "        \"hairLossImproveScore\": 脱发改善评分（0-100 整数）\n" +
+                        "    }},\n" +
+                        "    \"trend\": {{\n" +
+                        "        \"status\": \"改善/稳定/加重（三选一）\",\n" +
+                        "        \"description\": \"详细描述密度、粗细、覆盖度变化\"\n" +
+                        "    }},\n" +
+                        "    \"analysis\": {{\n" +
+                        "        \"compareResult\": \"前后对比详细医学分析\",\n" +
+                        "        \"keyChanges\": \"关键点变化（密度、发根、头皮可见度、粗细）\"\n" +
+                        "    }},\n" +
+                        "    \"suggestion\": {{\n" +
+                        "        \"treatmentSuggestion\": \"治疗方案建议\",\n" +
+                        "        \"dailyCare\": \"日常护理建议\",\n" +
+                        "        \"nextStep\": \"下一步应该做什么\"\n" +
+                        "    }},\n" +
+                        "    \"conclusion\": \"总体结论一句话\"\n" +
+                        "}}\n" +
+                        "\n" +
+                        "请严格按照以上结构输出 JSON，不要添加任何额外内容，不要 Markdown 格式。",
+                image1.getPart(),
+                image1.getUploadDate(),
+                image2.getPart(),
+                image2.getUploadDate(),
+                timeInterval
         );
     }
 
@@ -402,13 +439,13 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
             if (resp == null || resp.getOutput() == null) {
                 throw new RuntimeException("AI 响应为空");
             }
-            
+
             // 获取响应内容
             //AI思考过程结果
             BaseItem thinkBaseItem = resp.getOutput().get(0);
             //AI实际返回结果
-            ItemOutputMessage resultBaseItem = (ItemOutputMessage)resp.getOutput().get(1);
-            OutputContentItemText outputContentItem = (OutputContentItemText)resultBaseItem.getContent().get(0);
+            ItemOutputMessage resultBaseItem = (ItemOutputMessage) resp.getOutput().get(1);
+            OutputContentItemText outputContentItem = (OutputContentItemText) resultBaseItem.getContent().get(0);
             String message = outputContentItem.getText();
             /*String content =resultBaseItem.toString();
             
@@ -468,15 +505,15 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
         if (report == null) {
             return false;
         }
-        
+
         // 至少需要有评分或趋势信息
-        boolean hasScore = report.getScoreInfo() != null && 
-                          (report.getScoreInfo().getHairDensityScore() != null || 
-                           report.getScoreInfo().getHairLossImproveScore() != null);
-        
-        boolean hasTrend = report.getTrendInfo() != null && 
-                          report.getTrendInfo().getStatus() != null;
-        
+        boolean hasScore = report.getScoreInfo() != null &&
+                (report.getScoreInfo().getHairDensityScore() != null ||
+                        report.getScoreInfo().getHairLossImproveScore() != null);
+
+        boolean hasTrend = report.getTrendInfo() != null &&
+                report.getTrendInfo().getStatus() != null;
+
         return hasScore || hasTrend;
     }
 
@@ -485,9 +522,9 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
      */
     private AiAnalysisReport createFallbackAnalysis(UserHairImage image1, UserHairImage image2, String timeInterval) {
         log.info("使用备用分析方案");
-        
+
         AiAnalysisReport report = new AiAnalysisReport();
-        
+
         // 基本信息
         AiAnalysisReport.BasicInfo basicInfo = new AiAnalysisReport.BasicInfo();
         basicInfo.setPart(image1.getPart());
@@ -525,5 +562,27 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
         report.setConclusion("您的毛发状况目前保持稳定，请继续保持良好的生活习惯并定期观察。");
 
         return report;
+    }
+
+    /**
+     * 记录 AI 分析请求日志
+     */
+    private void logRequest(Long userId, Long imageId1, Long imageId2,
+                            Long analysisId, Long tokenUsed,
+                            boolean success, String errorMessage) {
+        try {
+            AiAnalysisRequestLog log = new AiAnalysisRequestLog();
+            log.setUserId(userId);
+            log.setRequestTime(TimeUtil.now());
+            log.setImageId1(imageId1);
+            log.setImageId2(imageId2);
+            log.setAnalysisId(analysisId);
+            log.setTokenUsed(tokenUsed);
+            log.setRequestStatus(success ? 1 : 0);
+            log.setErrorMessage(errorMessage);
+            aiAnalysisRequestLogMapper.insert(log);
+        } catch (Exception e) {
+            log.warn("记录 AI 分析请求日志失败", e);
+        }
     }
 }

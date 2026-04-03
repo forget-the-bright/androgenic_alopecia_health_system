@@ -26,19 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
         // 注册 Sa-Token 拦截器 - 对所有路径生效
         registry.addInterceptor(new SaInterceptor(handle -> {
                     // 登录验证
-                    if (!StpUtil.isLogin()) {
-                        // 获取 response
-                        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-                        HttpServletResponse response = attributes.getResponse();
-
-                        // 重定向到登录页（低版本通用写法）
-                        try {
-                            response.sendRedirect("/login.html");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        return;
-                    }
+                    StpUtil.checkLogin();
                 }))
                 .addPathPatterns("/**")
                 .excludePathPatterns(
@@ -84,5 +72,6 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/medicine.html").setViewName("medicine.html");
         registry.addViewController("/profile.html").setViewName("profile.html");
         registry.addViewController("/admin.html").setViewName("admin.html");
+        registry.addViewController("/membership.html").setViewName("membership.html");
     }
 }
