@@ -282,6 +282,22 @@ public class UserMembershipServiceImpl extends ServiceImpl<UserMembershipMapper,
         return result;
     }
 
+    /**
+     * 获取会员升级信息
+     * <p>计算从月度会员升级到年度会员的差价，基于剩余天数进行按比例抵扣</p>
+     * <p>计算公式：差价 = 年度价格 - (月度价格 × 剩余天数 / 30)</p>
+     *
+     * @param userId 用户ID
+     * @return 包含升级信息的Map对象，包含以下字段：
+     *         <ul>
+     *           <li>success (Boolean): 是否成功获取升级信息</li>
+     *           <li>message (String): 提示信息（失败时返回）</li>
+     *           <li>remainingDays (Long): 当前会员剩余天数</li>
+     *           <li>diffPrice (BigDecimal): 升级需要补的差价</li>
+     *           <li>monthlyPrice (BigDecimal): 月度会员价格</li>
+     *           <li>yearlyPrice (BigDecimal): 年度会员价格</li>
+     *         </ul>
+     */
     @Override
     public Map<String, Object> getUpgradeInfo(Long userId) {
         Map<String, Object> result = new HashMap<>();
@@ -307,13 +323,12 @@ public class UserMembershipServiceImpl extends ServiceImpl<UserMembershipMapper,
             long remainingDays = ChronoUnit.DAYS.between(now, endTime);
             remainingDays = Math.max(0, remainingDays);
 
-            // ✅ 修复：计算差价 = 年度价格 - 月度价格 × (剩余天数/30)
-            // 剩余天数越多，抵扣价值越多，差价越少
+            // 计算升级差价，根据剩余天数按比例抵扣
             BigDecimal remainingValue = monthlyPrice.multiply(
                 new BigDecimal(remainingDays).divide(new BigDecimal(30), 2, BigDecimal.ROUND_HALF_UP)
             );
             BigDecimal diffPrice = yearlyPrice.subtract(remainingValue);
-            diffPrice = diffPrice.max(BigDecimal.ZERO); // 确保不为负
+            diffPrice = diffPrice.max(BigDecimal.ZERO);
 
             result.put("success", true);
             result.put("remainingDays", remainingDays);
