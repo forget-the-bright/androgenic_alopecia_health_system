@@ -37,7 +37,7 @@ public class WebConfig implements WebMvcConfigurer {
                     System.out.println("当前访问路径：" + requestPath);
                     boolean login = StpUtil.isLogin();
                     // 登录验证
-                    if (!login && requestPath.contains(".html")) {
+                    if (!login && requestPath.contains(".html") || requestPath.equals("/")) {
                         // 重定向到登录页（低版本通用写法）
                         try {
                             response.sendRedirect("/login.html");

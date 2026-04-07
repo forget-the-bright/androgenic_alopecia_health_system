@@ -149,7 +149,17 @@
             <artifactId>HaoUtil</artifactId>
             <version>1.0.16.9</version>
         </dependency>
-
+        <!-- 真实 YAML 转换库，100% 可用 -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.moandjiezana.toml</groupId>
+            <artifactId>toml4j</artifactId>
+            <version>0.7.2</version>
+        </dependency>
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>

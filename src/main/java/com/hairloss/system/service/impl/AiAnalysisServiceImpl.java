@@ -1,8 +1,9 @@
 package com.hairloss.system.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,10 +19,10 @@ import com.hairloss.system.service.SysOperationLogService;
 import com.hairloss.system.service.UserHairImageService;
 import com.hairloss.system.service.UserMembershipService;
 import com.hairloss.system.utils.TimeUtil;
+import com.moandjiezana.toml.TomlWriter;
 import com.volcengine.ark.runtime.model.responses.constant.ResponsesConstants;
 import com.volcengine.ark.runtime.model.responses.content.InputContentItemImage;
 import com.volcengine.ark.runtime.model.responses.content.InputContentItemText;
-import com.volcengine.ark.runtime.model.responses.content.OutputContentItem;
 import com.volcengine.ark.runtime.model.responses.content.OutputContentItemText;
 import com.volcengine.ark.runtime.model.responses.item.BaseItem;
 import com.volcengine.ark.runtime.model.responses.item.ItemEasyMessage;
@@ -30,7 +31,6 @@ import com.volcengine.ark.runtime.model.responses.item.MessageContent;
 import com.volcengine.ark.runtime.model.responses.request.CreateResponsesRequest;
 import com.volcengine.ark.runtime.model.responses.request.ResponsesInput;
 import com.volcengine.ark.runtime.model.responses.response.ResponseObject;
-import com.volcengine.ark.runtime.model.responses.usage.Usage;
 import com.volcengine.ark.runtime.service.ArkService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,10 +39,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -277,7 +280,12 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
         String timeInterval = calculateTimeInterval(image1.getUploadDate(), image2.getUploadDate());
 
         // 构建专业提示词
-        String prompt = buildAnalysisPrompt(image1, image2, timeInterval);
+        //String prompt = buildAnalysisPrompt(image1, image2, timeInterval);
+        //yaml  2126 token
+        //toml 2401  token
+        //json 2931  token
+        //md 2675 token
+        String prompt = buildAnalysisPromptYaml(image1, image2, timeInterval);
 
         log.info("开始调用 AI 接口进行分析，模型：{}, 部位：{}", model, image1.getPart());
 
@@ -285,11 +293,11 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
             // 构建消息内容
             MessageContent content = MessageContent.builder()
                     .addListItem(InputContentItemImage.builder()
-                            .imageUrl(image1.getFileUrl())
+                            .imageUrl(image1.getFileUrl().substring(0, image1.getFileUrl().indexOf("?")))
                             .detail("high")
                             .build())
                     .addListItem(InputContentItemImage.builder()
-                            .imageUrl(image2.getFileUrl())
+                            .imageUrl(image2.getFileUrl().substring(0, image2.getFileUrl().indexOf("?")))
                             .detail("high")
                             .build())
                     .addListItem(InputContentItemText.builder().text(prompt).build())
@@ -429,6 +437,118 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
                 image2.getUploadDate(),
                 timeInterval
         );
+    }
+
+    /**
+     * 构建 AI 分析提示词（全 Map 结构化，易维护）
+     */
+    private String buildAnalysisPromptJson(UserHairImage image1, UserHairImage image2, String timeInterval) {
+        // 转成 JSON 字符串返回
+        Map<String, Object> promptMap = buildAnalysisPromptMap(image1, image2, timeInterval);
+        return JSON.toJSONString(promptMap);
+    }
+
+    private String buildAnalysisPromptToml(UserHairImage image1, UserHairImage image2, String timeInterval) {
+        // 转成 JSON 字符串返回
+        Map<String, Object> promptMap = buildAnalysisPromptMap(image1, image2, timeInterval);
+        // ====================== 核心：Map → 标准 TOML ======================
+        try {
+            // 写入：默认分段、缩进、多行
+            TomlWriter tomlWriter = new TomlWriter();
+            String toml = tomlWriter.write(promptMap);
+
+/*            ObjectMapper mapper = new ObjectMapper(new TomlFactory()).enable(SerializationFeature.INDENT_OUTPUT);;
+            return mapper.writeValueAsString(promptMap);*/
+            return toml;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    private String buildAnalysisPromptYaml(UserHairImage image1, UserHairImage image2, String timeInterval) {
+        // ====================== 关键：生成标准 YAML ======================
+        DumperOptions options = new DumperOptions();
+        options.setPrettyFlow(true);
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setIndent(2);
+        options.setIndicatorIndent(0);
+
+        Yaml yaml = new Yaml(options);
+        Map<String, Object> promptMap = buildAnalysisPromptMap(image1, image2, timeInterval);
+        return yaml.dump(promptMap);
+    }
+
+    private Map<String, Object> buildAnalysisPromptMap(UserHairImage image1, UserHairImage image2, String timeInterval) {
+        Map<String, Object> prompt = new LinkedHashMap<>();
+
+        // 1. 角色
+        prompt.put("role", "专业皮肤科毛发医生，擅长雄脱诊断与对比分析");
+
+        // 2. 任务
+        prompt.put("task", "对两张不同时间的头皮/脱发照片做专业、严谨、客观对比分析");
+
+        // 3. 要求
+        prompt.put("rules", "必须基于视觉特征，不编造；仅输出标准JSON，无多余文字、无解释、无markdown；评分客观公正");
+
+        // 4. 图片信息
+        Map<String, Object> images = new LinkedHashMap<>();
+        images.put("图1（较早）-部位", image1.getPart());
+        images.put("图1（较早）-时间", DateUtil.formatLocalDateTime(image1.getUploadTime()));
+        images.put("图2（较近）-部位", image2.getPart());
+        images.put("图2（较近）-时间", DateUtil.formatLocalDateTime(image2.getUploadTime()));
+        images.put("时间间隔", timeInterval);
+        prompt.put("images", images);
+
+        // ====================== 重点 ======================
+        // outputStructure 完全用 MAP 构建（壳子结构，方便维护）
+        // ====================== 重点 ======================
+        Map<String, Object> outputStructure = new LinkedHashMap<>();
+
+        // basicInfo
+        Map<String, Object> basicInfo = new LinkedHashMap<>();
+        basicInfo.put("part", "分析部位（头顶/前额/发旋/鬓角）");
+        basicInfo.put("timeInterval", "时间间隔描述");
+        basicInfo.put("image1Time", "图片1时间");
+        basicInfo.put("image2Time", "图片2时间");
+
+        // score
+        Map<String, Object> score = new LinkedHashMap<>();
+        score.put("hairDensityScore", "毛发密度评分 0-100 整数");
+        score.put("hairLossImproveScore", "脱发改善评分 0-100 整数");
+
+        // trend
+        Map<String, Object> trend = new LinkedHashMap<>();
+        trend.put("status", "改善/稳定/加重（三选一）");
+        trend.put("description", "详细描述密度、粗细、覆盖度变化");
+
+        // analysis
+        Map<String, Object> analysis = new LinkedHashMap<>();
+        analysis.put("compareResult", "前后对比详细医学分析");
+        analysis.put("keyChanges", "关键点变化（密度、发根、头皮可见度、粗细）");
+
+        // suggestion
+        Map<String, Object> suggestion = new LinkedHashMap<>();
+        suggestion.put("treatmentSuggestion", "治疗方案建议");
+        suggestion.put("dailyCare", "日常护理建议");
+        suggestion.put("nextStep", "下一步应该做什么");
+
+        // 组装整个输出结构
+        outputStructure.put("basicInfo", basicInfo);
+        outputStructure.put("score", score);
+        outputStructure.put("trend", trend);
+        outputStructure.put("analysis", analysis);
+        outputStructure.put("suggestion", suggestion);
+        outputStructure.put("conclusion", "总体结论一句话");
+
+        // 放入主 prompt
+        prompt.put("outputStructure", outputStructure);
+
+        // 最后命令
+        prompt.put("final", "严格按照以上 outputStructure 结构输出，仅返回JSON，无任何多余内容");
+
+        // 转成 JSON 字符串返回
+        return prompt;
     }
 
     /**
