@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hairloss.system.entity.SysUser;
 
+import java.util.HashMap;
+
 /**
  * 系统用户服务接口
  */
@@ -43,7 +45,7 @@ public interface SysUserService extends IService<SysUser> {
      * @return 用户信息
      */
     SysUser getCurrentUser();
-
+    HashMap<String, Object> getCurrentUserInfo();
     /**
      * 分页查询用户列表
      * @param page 分页参数
@@ -68,4 +70,6 @@ public interface SysUserService extends IService<SysUser> {
      * @return 重置结果
      */
     boolean resetPassword(Long userId, String newPassword);
+
+
 }

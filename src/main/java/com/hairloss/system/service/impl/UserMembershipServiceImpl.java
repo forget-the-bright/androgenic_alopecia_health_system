@@ -52,23 +52,48 @@ public class UserMembershipServiceImpl extends ServiceImpl<UserMembershipMapper,
     @Override
     public UserMembership getMembershipInfo(Long userId) {
         UserMembership membership = this.getOrCreateMembership(userId);
-        
+
         // 检查是否过期
         checkMembershipExpired(membership);
-        
+
         // 检查并重置月度次数
         checkAndResetMonthlyCount(membership);
-        
-        // 计算剩余次数
-        int remaining = membership.getMonthlyQuota() - membership.getUsedCountCurrentMonth();
+
+        // 计算剩余次数 (确保不为负数)
+        int quota = membership.getMonthlyQuota() != null ? membership.getMonthlyQuota() : 0;
+        int used = membership.getUsedCountCurrentMonth() != null ? membership.getUsedCountCurrentMonth() : 0;
+        int remaining = quota - used;
         membership.setRemainingCount(Math.max(0, remaining));
-        
+
         // 设置等级名称
         membership.setLevelName(getLevelName(membership.getMembershipLevel()));
-        
+
         // 检查是否过期
         membership.setExpired(membership.getStatus() == 0);
-        
+
+        // 确保配额字段有值
+        if (membership.getMonthlyQuota() == null) {
+            if (membership.getMembershipLevel() == LEVEL_FREE) {
+                membership.setMonthlyQuota(getMembershipQuota(CONFIG_FREE_QUOTA));
+            } else if (membership.getMembershipLevel() == LEVEL_MONTHLY) {
+                membership.setMonthlyQuota(getMembershipQuota(CONFIG_MONTHLY_QUOTA));
+            } else if (membership.getMembershipLevel() == LEVEL_YEARLY) {
+                membership.setMonthlyQuota(getMembershipQuota(CONFIG_YEARLY_QUOTA));
+            } else {
+                membership.setMonthlyQuota(0);
+            }
+        }
+
+        // 确保已使用次数有值
+        if (membership.getUsedCountCurrentMonth() == null) {
+            membership.setUsedCountCurrentMonth(0);
+        }
+
+        log.debug("用户 {} 会员信息: level={}, levelName={}, quota={}, used={}, remaining={}, status={}", 
+            userId, membership.getMembershipLevel(), membership.getLevelName(), 
+            membership.getMonthlyQuota(), membership.getUsedCountCurrentMonth(), 
+            membership.getRemainingCount(), membership.getStatus());
+
         return membership;
     }
 
@@ -107,11 +132,11 @@ public class UserMembershipServiceImpl extends ServiceImpl<UserMembershipMapper,
             String orderNo = generateOrderNo();
             
             // 获取配额
-            int quota = membershipLevel == LEVEL_MONTHLY ? 
-                getMembershipQuota(CONFIG_MONTHLY_QUOTA) : 
+            int quota = membershipLevel == LEVEL_MONTHLY ?
+                getMembershipQuota(CONFIG_MONTHLY_QUOTA) :
                 getMembershipQuota(CONFIG_YEARLY_QUOTA);
-            
-            // 计算新的到期时间
+
+            // ✅ 修复：有效期从购买日开始计算
             LocalDateTime now = TimeUtil.now();
             LocalDateTime newEndTime = now.plusDays(days);
             
@@ -282,7 +307,8 @@ public class UserMembershipServiceImpl extends ServiceImpl<UserMembershipMapper,
             long remainingDays = ChronoUnit.DAYS.between(now, endTime);
             remainingDays = Math.max(0, remainingDays);
 
-            // 计算差价：年度价格 - 月度价格 × (剩余天数/30)
+            // ✅ 修复：计算差价 = 年度价格 - 月度价格 × (剩余天数/30)
+            // 剩余天数越多，抵扣价值越多，差价越少
             BigDecimal remainingValue = monthlyPrice.multiply(
                 new BigDecimal(remainingDays).divide(new BigDecimal(30), 2, BigDecimal.ROUND_HALF_UP)
             );

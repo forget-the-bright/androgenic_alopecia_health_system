@@ -40,10 +40,10 @@ public class SysUserController {
         }
 
         String token = sysUserService.login(username, password);
-
+        HashMap<String, Object>   userInfo =  sysUserService.getCurrentUserInfo();
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
-        result.put("userInfo", sysUserService.getCurrentUser());
+        result.put("userInfo", userInfo);
 
         return Result.success(result);
     }
@@ -71,8 +71,15 @@ public class SysUserController {
 
     @GetMapping("/user/info")
     @ApiOperation("获取当前用户信息")
-    public Result<SysUser> getUserInfo() {
-        return Result.success(sysUserService.getCurrentUser());
+    public Result<Map<String, Object>> getUserInfo() {
+        HashMap<String, Object>   userInfo =  sysUserService.getCurrentUserInfo();
+        return Result.success(userInfo);
+    }
+
+    @GetMapping("/user/checkLogin")
+    @ApiOperation("获取当前用户信息")
+    public Result<Boolean> CheckLogin() {
+        return Result.success(true);
     }
 
     @PostMapping("/user/change-password")

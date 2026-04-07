@@ -19,6 +19,9 @@ function getToken() {
     }
     return token;
 }
+function getUserInfo(){
+    return JSON.parse(localStorage.getItem('userInfo'));
+}
 
 /**
  * 封装的 AJAX 请求方法
@@ -67,9 +70,9 @@ function apiRequest(options) {
             }
 
             // 调用成功回调
-            if (settings.success) {
+          /*  if (settings.success) {
                 settings.success(res);
-            }
+            }*/
         })
         .fail(function(xhr) {
             // 处理 HTTP 错误状态码
@@ -97,9 +100,9 @@ function apiRequest(options) {
             }
 
             // 调用失败回调
-            if (settings.error) {
+          /*  if (settings.error) {
                 settings.error(xhr);
-            }
+            }*/
         })
         .always(function() {
             // 隐藏加载动画
@@ -369,9 +372,9 @@ function checkLoginAsync(callback) {
     }
 
     // 验证 token 有效性
-    apiGet('/api/user/info', function(res) {
+    apiGet('/api/user/checkLogin', function(res) {
         if (res.code === 200) {
-            if (callback) callback(res.data);
+            if (callback) callback(getUserInfo());
         } else {
             handleUnauthorized();
         }

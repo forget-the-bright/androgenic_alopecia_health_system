@@ -884,6 +884,25 @@
                 loadAnalysisList(1);
                 initModalDraggable('detail');
                 initModalDraggable('image');
+                
+                // 修复模态框关闭后 backdrop 残留问题
+                $('#detailModal').on('hidden.bs.modal', function() {
+                    // 移除所有残留的 backdrop
+                    $('.modal-backdrop').remove();
+                    // 恢复 body 的 overflow
+                    $('body').removeClass('modal-open').css('overflow', '');
+                    // 重置模态框位置
+                    resetModalPosition('detail');
+                });
+                
+                $('#imageSelectModal').on('hidden.bs.modal', function() {
+                    // 移除所有残留的 backdrop
+                    $('.modal-backdrop').remove();
+                    // 恢复 body 的 overflow
+                    $('body').removeClass('modal-open').css('overflow', '');
+                    // 重置模态框位置
+                    resetModalPosition('image');
+                });
             });
         });
 
@@ -908,31 +927,33 @@
         function initModalDraggable(type) {
             var modalId = type === 'detail' ? '#detailModal' : '#imageSelectModal';
             var headerId = type === 'detail' ? '#detailModalHeader' : '#imageSelectModalHeader';
-            
-            $(headerId).on('mousedown', function(e) {
+
+            $(headerId).off('mousedown').on('mousedown', function(e) {
                 if ($(e.target).closest('.modal-actions').length > 0) return;
-                
+
                 modalState[type].isDragging = true;
                 var dialog = $(modalId + ' .modal-dialog');
-                var modalContent = $(modalId + ' .modal-content');
-                var offsetX = e.pageX - dialog.offset().left;
-                var offsetY = e.pageY - dialog.offset().top;
                 
+                // 计算鼠标相对于 dialog 的偏移量
+                var dialogOffset = dialog.offset();
+                var offsetX = e.pageX - dialogOffset.left;
+                var offsetY = e.pageY - dialogOffset.top;
+
                 dialog.css({
                     margin: '0',
                     position: 'fixed',
-                    left: (e.pageX - offsetX) + 'px',
-                    top: (e.pageY - offsetY) + 'px'
+                    left: (e.clientX - offsetX) + 'px',
+                    top: (e.clientY - offsetY) + 'px'
                 });
-                
+
                 $(document).on('mousemove', function(e) {
                     if (!modalState[type].isDragging) return;
                     dialog.css({
-                        left: (e.pageX - offsetX) + 'px',
-                        top: (e.pageY - offsetY) + 'px'
+                        left: (e.clientX - offsetX) + 'px',
+                        top: (e.clientY - offsetY) + 'px'
                     });
                 });
-                
+
                 $(document).on('mouseup', function() {
                     modalState[type].isDragging = false;
                     $(document).off('mousemove');
@@ -949,25 +970,66 @@
             modalState[type].isMaximized = !modalState[type].isMaximized;
 
             if (modalState[type].isMaximized) {
+                // 最大化：布满整个屏幕
+                dialog.css({
+                    'max-width': '100%',
+                    'width': '100%',
+                    'height': '100vh',
+                    'margin': '0',
+                    'left': '0',
+                    'top': '0',
+                    'position': 'fixed'
+                });
                 dialog.addClass('maximized');
-                // 切换为还原图标（使用 bi-fullscreen-exit）
+                // 切换为还原图标
                 btn.removeClass('bi-arrows-fullscreen').addClass('bi-fullscreen-exit');
             } else {
+                // 还原：清除所有最大化样式
+                dialog.css({
+                    'max-width': '',
+                    'width': '',
+                    'height': '',
+                    'margin': '',
+                    'left': '',
+                    'top': '',
+                    'position': ''
+                });
                 dialog.removeClass('maximized');
                 // 切换为最大化图标
                 btn.removeClass('bi-fullscreen-exit').addClass('bi-arrows-fullscreen');
             }
         }
 
+        // 重置模态框位置
+        function resetModalPosition(type) {
+            var modalId = type === 'detail' ? '#detailModal' : '#imageSelectModal';
+            var dialog = $(modalId + ' .modal-dialog');
+            
+            // 清除所有拖动和最大化相关的 CSS
+            dialog.css({
+                'position': '',
+                'left': '',
+                'top': '',
+                'margin': '',
+                'max-width': '',
+                'width': '',
+                'height': ''
+            });
+            
+            // 重置最大化状态
+            dialog.removeClass('maximized');
+            modalState[type].isMaximized = false;
+            
+            // 还原图标
+            var btn = dialog.find('.btn-maximize i');
+            btn.removeClass('bi-fullscreen-exit').addClass('bi-arrows-fullscreen');
+        }
+
         // 加载所有照片
         function loadAllImages() {
-            apiGet('/api/image/list', function(res) {
-                if (res.code === 200) {
-                    allImages = res.data || [];
-                    // 设置默认筛选范围为最近 15 天
-                    setDefaultDateFilter();
-                }
-            });
+            setDefaultDateFilter();
+            // 自动应用筛选
+            applyFilter();
         }
 
         // 设置默认日期筛选（最近 15 天）
@@ -980,9 +1042,7 @@
             
             $('#filterStartDate').val(startDateStr);
             $('#filterEndDate').val(endDateStr);
-            
-            // 自动应用筛选
-            applyFilter();
+            $('#filterPart').val("");
         }
         
         // 格式化日期为 input 格式
@@ -998,20 +1058,20 @@
             var startDate = $('#filterStartDate').val();
             var endDate = $('#filterEndDate').val();
             var part = $('#filterPart').val();
-            
-            filteredImages = allImages.filter(function(img) {
-                var imgDate = img.uploadDate;
-                var passDate = true;
-                var passPart = true;
-                
-                if (startDate && imgDate < startDate) passDate = false;
-                if (endDate && imgDate > endDate) passDate = false;
-                if (part && img.part !== part) passPart = false;
-                
-                return passDate && passPart;
+
+            var params = [];
+            if (part) params.push('part=' + encodeURIComponent(part));
+            if (startDate) params.push('startDate=' + startDate);
+            if (endDate) params.push('endDate=' + endDate);
+            var queryString = params.length > 0 ? '?' + params.join('&') : '';
+            apiGet('/api/image/list' + queryString, function(res) {
+                if (res.code === 200) {
+                    allImages = res.data || [];
+                    filteredImages = allImages;
+                    renderImageGrid();
+                }
             });
-            
-            renderImageGrid();
+
         }
 
         // 重置筛选
@@ -1019,7 +1079,8 @@
             $('#filterStartDate').val('');
             $('#filterEndDate').val('');
             $('#filterPart').val('');
-            filteredImages = allImages;
+            //applyFilter();
+            filteredImages = [];
             renderImageGrid();
         }
 

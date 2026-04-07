@@ -371,61 +371,106 @@
     <script>
         var membershipInfo = null;
         var purchaseLevel = 0;
+        var membershipLoaded = false; // 防止重复加载
+        var upgradeInfoLoaded = false; // 防止重复加载升级信息
 
         $(function() {
-            checkLoginAsync(function() {
-                loadMembershipInfo();
-                checkAdminLink();
-            });
+            // 使用 checkLogin 而不是 checkLoginAsync,避免额外请求
+            if (!checkLogin()) return;
+            
+            loadMembershipInfo();
+            checkAdminLink();
         });
 
         // 加载会员信息
         function loadMembershipInfo() {
-            apiGet('/api/membership/info', function(res) {
-                if (res.code === 200) {
-                    membershipInfo = res.data;
-                    renderMembershipInfo();
+            if (membershipLoaded) {
+                console.log('会员信息已加载,跳过重复请求');
+                return;
+            }
+            
+            // 使用 apiRequest 禁用 loading
+            apiRequest({
+                url: '/api/membership/info',
+                type: 'GET',
+                showLoading: false,
+                showError: true,
+                success: function(res) {
+                    if (res.code === 200) {
+                        membershipInfo = res.data;
+                        membershipLoaded = true;
+                        renderMembershipInfo();
+                        console.log('会员信息加载成功:', membershipInfo);
+                    }
                 }
             });
         }
 
         // 渲染会员信息
         function renderMembershipInfo() {
-            if (!membershipInfo) return;
+            if (!membershipInfo) {
+                console.error('会员信息为空');
+                return;
+            }
+
+            console.log('会员信息:', membershipInfo);
 
             // 更新等级徽章
-            var levelClass = 'level-' + (membershipInfo.membershipLevel === 0 ? 'free' : 
-                                         membershipInfo.membershipLevel === 1 ? 'monthly' : 'yearly');
-            $('#currentLevel').text(membershipInfo.levelName || '免费用户')
+            var level = membershipInfo.membershipLevel || 0;
+            var levelClass = 'level-' + (level === 0 ? 'free' : level === 1 ? 'monthly' : 'yearly');
+            var levelName = membershipInfo.levelName || (level === 0 ? '免费用户' : level === 1 ? '月度会员' : '年度会员');
+            
+            $('#currentLevel').text(levelName)
                 .removeClass('level-free level-monthly level-yearly')
                 .addClass(levelClass);
 
-            // 更新统计
-            $('#monthlyQuota').text(membershipInfo.monthlyQuota || 0);
-            $('#usedCount').text(membershipInfo.usedCountCurrentMonth || 0);
-            $('#remainingCount').text(membershipInfo.remainingCount || 0);
+            // 更新统计 (增加容错)
+            var monthlyQuota = membershipInfo.monthlyQuota || 0;
+            var usedCount = membershipInfo.usedCountCurrentMonth || 0;
+            var remainingCount = membershipInfo.remainingCount !== undefined ? membershipInfo.remainingCount : Math.max(0, monthlyQuota - usedCount);
+            
+            $('#monthlyQuota').text(monthlyQuota);
+            $('#usedCount').text(usedCount);
+            $('#remainingCount').text(remainingCount);
 
             // 到期时间
-            if (membershipInfo.membershipEndTime) {
-                $('#membershipEndTime').text('有效期至：' + membershipInfo.membershipEndTime.replace('T', ' '));
-                $('#resetDay').text('-');
+            if (membershipInfo.membershipEndTime && membershipInfo.status === 1) {
+                // 有到期时间且状态有效
+                var endTimeStr = membershipInfo.membershipEndTime.replace('T', ' ').substring(0, 16);
+                $('#membershipEndTime').text('有效期至：' + endTimeStr);
+                
+                // ✅ 根据会员等级显示重置周期
+                if (level === 1) {
+                    $('#resetDay').text('每 30 天');  // 月度会员
+                } else if (level === 2) {
+                    $('#resetDay').text('每 365 天');  // 年度会员
+                } else {
+                    $('#resetDay').text('-');
+                }
             } else {
-                $('#membershipEndTime').text('永久有效');
-                $('#resetDay').text('每月 1 日');
+                // 免费用户或已过期
+                if (level === 0) {
+                    $('#membershipEndTime').text('永久有效');
+                    $('#resetDay').text('每 30 天');  // 免费用户也是每月重置
+                } else {
+                    $('#membershipEndTime').text('已过期');
+                    $('#membershipEndTime').css('color', '#ff6b6b');
+                    $('#resetDay').text('-');
+                }
             }
 
             // 显示对应区域
-            if (membershipInfo.membershipLevel === 0) {
+            if (level === 0) {
                 // 免费用户 - 显示购买选项
                 $('#purchaseSection').show();
                 $('#upgradeSection').hide();
                 $('#freeTip').hide();
-            } else if (membershipInfo.membershipLevel === 1) {
+            } else if (level === 1) {
                 // 月度会员 - 显示升级选项
                 $('#purchaseSection').hide();
                 $('#upgradeSection').show();
                 $('#freeTip').hide();
-                
+
                 // 加载升级差价
                 loadUpgradeInfo();
             } else {
@@ -437,14 +482,35 @@
         }
 
         // 加载升级信息
-        function loadUpgradeInfo() {
-            apiGet('/api/membership/upgrade-info', function(res) {
-                if (res.code === 200 && res.data) {
-                    $('#remainingDays').text(res.data.remainingDays || 0);
-                    $('#diffPrice').text(res.data.diffPrice || 0);
+        function loadUpgradeInfo(forceReload) {
+            if (upgradeInfoLoaded && !forceReload) {
+                console.log('升级信息已加载,跳过重复请求');
+                return;
+            }
+            
+            // 使用 apiRequest 禁用 loading
+            apiRequest({
+                url: '/api/membership/upgrade-info',
+                type: 'GET',
+                showLoading: false,
+                showError: false,  // 升级信息加载失败不影响主流程
+                success: function(res) {
+                    if (res.code === 200 && res.data) {
+                        var remainingDays = res.data.remainingDays || 0;
+                        var diffPrice = res.data.diffPrice || 0;
+
+                        $('#remainingDays').text(remainingDays);
+                        
+                        // ✅ 修复：HTML 中已有 ¥ 符号，JS 不需要再加
+                        $('#diffPrice').text(parseFloat(diffPrice).toFixed(2));
+
+                        upgradeInfoLoaded = true;
+                        console.log('升级信息加载成功:', res.data);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('获取升级信息失败:', xhr);
                 }
-            }, function() {
-                // 忽略错误
             });
         }
 
@@ -468,6 +534,9 @@
                 if (res.code === 200) {
                     showToast('购买成功！', 'success');
                     $('#purchaseModal').modal('hide');
+                    // 重置标志，允许重新加载
+                    membershipLoaded = false;
+                    upgradeInfoLoaded = false;
                     loadMembershipInfo();
                 } else {
                     showToast(res.msg || '购买失败', 'danger');

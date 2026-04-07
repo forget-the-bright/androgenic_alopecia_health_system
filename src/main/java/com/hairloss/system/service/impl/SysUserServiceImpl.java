@@ -18,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 
 /**
  * 系统用户服务实现类
@@ -145,6 +146,21 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public SysUser getCurrentUser() {
         Long userId = StpUtil.getLoginIdAsLong();
         return this.getById(userId);
+    }
+
+    @Override
+    public HashMap<String, Object> getCurrentUserInfo() {
+        SysUser currentUser = getCurrentUser();
+        HashMap<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", currentUser.getId());
+        userInfo.put("username", currentUser.getUsername());
+        userInfo.put("realName", currentUser.getRealName());
+        userInfo.put("role", currentUser.getRole());
+        userInfo.put("language", currentUser.getLanguage());
+        userInfo.put("status", currentUser.getStatus());
+        userInfo.put("createTime", currentUser.getCreateTime());
+        userInfo.put("lastLoginTime", currentUser.getLastLoginTime());
+        return userInfo;
     }
 
     @Override

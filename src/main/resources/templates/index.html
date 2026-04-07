@@ -182,7 +182,27 @@
         }
 
         function loadStatistics() {
-            apiGet('/api/image/list', function(res) {
+            apiGet('/api/index/loadStatistics', function(res) {
+                if (res.code === 200) {
+                    let imageCount=  res.data.imageCount;
+                    let analysisCount=   res.data.analysisCount;
+                    let medicineCount=   res.data.medicineCount;
+                    let clockStatistics=   res.data.clockStatistics;
+                    $('#photoCount').text(imageCount || 0);
+                    $('#analysisCount').text(analysisCount || 0);
+                    $('#medicineCount').text(medicineCount || 0);
+                    if( clockStatistics && clockStatistics.length > 0){
+                        var maxDays = 0;
+                        clockStatistics.forEach(function(stat) {
+                            if (stat.consecutiveDays > maxDays) {
+                                maxDays = stat.consecutiveDays;
+                            }
+                        });
+                        $('#clockDays').text(maxDays);
+                    }
+                }
+            });
+         /*   apiGet('/api/image/list', function(res) {
                 if (res.code === 200) {
                     $('#photoCount').text(res.data?.length || 0);
                 }
@@ -210,7 +230,7 @@
                     });
                     $('#clockDays').text(maxDays);
                 }
-            });
+            });*/
         }
     </script>
 </body>
