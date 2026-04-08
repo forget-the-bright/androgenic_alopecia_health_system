@@ -3,10 +3,13 @@ package com.hairloss.system.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hairloss.system.dto.MedicineDetailStats;
 import com.hairloss.system.entity.MedicineClock;
+import com.hairloss.system.entity.UserMedicine;
 import com.hairloss.system.mapper.MedicineClockMapper;
 import com.hairloss.system.service.MedicineClockService;
 import com.hairloss.system.service.SysOperationLogService;
+import com.hairloss.system.service.UserMedicineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,9 @@ public class MedicineClockServiceImpl extends ServiceImpl<MedicineClockMapper, M
 
     @Autowired
     private SysOperationLogService sysOperationLogService;
+
+    @Autowired
+    private UserMedicineService userMedicineService;
 
     /**
      * 获取请求 IP 地址
@@ -257,5 +263,159 @@ public class MedicineClockServiceImpl extends ServiceImpl<MedicineClockMapper, M
             throw new RuntimeException("打卡记录不存在或无权限访问");
         }
         return clock;
+    }
+
+    @Override
+    public MedicineDetailStats getMedicineDetailStats(Long userId, Long medicineId) {
+        UserMedicine medicine = userMedicineService.getById(medicineId);
+        if (medicine == null || !medicine.getUserId().equals(userId)) {
+            throw new RuntimeException("用药方案不存在或无权限访问");
+        }
+
+        MedicineDetailStats stats = new MedicineDetailStats();
+        
+        stats.setMedicineId(medicine.getId());
+        stats.setMedicineName(medicine.getMedicineName());
+        stats.setDosage(medicine.getDosage());
+        stats.setTakeTime(medicine.getTakeTime());
+        stats.setCycle(medicine.getCycle());
+        stats.setStatus(medicine.getStatus());
+        stats.setRemark(medicine.getRemark());
+
+        List<MedicineClock> allRecords = this.list(new LambdaQueryWrapper<MedicineClock>()
+                .eq(MedicineClock::getUserId, userId)
+                .eq(MedicineClock::getMedicineId, medicineId)
+                .orderByAsc(MedicineClock::getClockDate));
+
+        if (allRecords.isEmpty()) {
+            stats.setFirstClockDate(null);
+            stats.setLastClockDate(null);
+            stats.setTotalDays(0);
+            stats.setActualClockDays(0);
+            stats.setMissedDays(0);
+            stats.setHasBreak(false);
+            stats.setBreakCount(0);
+            stats.setTotalBreakDays(0);
+            stats.setBreakPeriods(new ArrayList<>());
+            stats.setCompletionRate(0.0);
+            stats.setCurrentConsecutiveDays(0);
+            return stats;
+        }
+
+        LocalDate firstDate = allRecords.get(0).getClockDate();
+        LocalDate lastDate = allRecords.get(allRecords.size() - 1).getClockDate();
+        LocalDate today = LocalDate.now();
+
+        stats.setFirstClockDate(firstDate);
+        stats.setLastClockDate(lastDate);
+
+        int totalDays = (int) ChronoUnit.DAYS.between(firstDate, today) + 1;
+        stats.setTotalDays(totalDays);
+
+        long actualClockDays = allRecords.stream()
+                .filter(r -> r.getClockStatus() == 1 || r.getClockStatus() == 2)
+                .count();
+        stats.setActualClockDays((int) actualClockDays);
+
+        long missedDays = allRecords.stream()
+                .filter(r -> r.getClockStatus() == 0)
+                .count();
+        stats.setMissedDays((int) missedDays);
+
+        List<MedicineDetailStats.BreakPeriod> breakPeriods = analyzeBreakPeriods(allRecords, firstDate, lastDate);
+        stats.setBreakPeriods(breakPeriods);
+        stats.setBreakCount(breakPeriods.size());
+        stats.setHasBreak(!breakPeriods.isEmpty());
+        stats.setTotalBreakDays(breakPeriods.stream()
+                .mapToInt(MedicineDetailStats.BreakPeriod::getDays)
+                .sum());
+
+        double completionRate = totalDays > 0 ? (double) actualClockDays / totalDays * 100 : 0;
+        stats.setCompletionRate(Math.round(completionRate * 10) / 10.0);
+
+        int consecutiveDays = calculateConsecutiveDaysFromToday(allRecords);
+        stats.setCurrentConsecutiveDays(consecutiveDays);
+
+        return stats;
+    }
+
+    @Override
+    public List<MedicineDetailStats> getAllMedicineDetailStats(Long userId) {
+        List<UserMedicine> medicines = userMedicineService.getMedicineList(userId);
+        List<MedicineDetailStats> allStats = new ArrayList<>();
+        
+        for (UserMedicine medicine : medicines) {
+            try {
+                MedicineDetailStats stats = getMedicineDetailStats(userId, medicine.getId());
+                allStats.add(stats);
+            } catch (Exception e) {
+                // 忽略单个方案的错误，继续处理其他方案
+            }
+        }
+        
+        return allStats;
+    }
+
+    private List<MedicineDetailStats.BreakPeriod> analyzeBreakPeriods(List<MedicineClock> records, LocalDate firstDate, LocalDate lastDate) {
+        List<MedicineDetailStats.BreakPeriod> breakPeriods = new ArrayList<>();
+        
+        if (records.isEmpty()) {
+            return breakPeriods;
+        }
+
+        Set<LocalDate> clockDates = records.stream()
+                .filter(r -> r.getClockStatus() == 1 || r.getClockStatus() == 2)
+                .map(MedicineClock::getClockDate)
+                .collect(Collectors.toSet());
+
+        LocalDate currentDate = firstDate;
+        MedicineDetailStats.BreakPeriod currentBreak = null;
+
+        while (!currentDate.isAfter(lastDate)) {
+            if (!clockDates.contains(currentDate)) {
+                if (currentBreak == null) {
+                    currentBreak = new MedicineDetailStats.BreakPeriod();
+                    currentBreak.setStartDate(currentDate);
+                }
+                currentBreak.setEndDate(currentDate);
+            } else {
+                if (currentBreak != null) {
+                    int days = (int) ChronoUnit.DAYS.between(currentBreak.getStartDate(), currentBreak.getEndDate()) + 1;
+                    currentBreak.setDays(days);
+                    breakPeriods.add(currentBreak);
+                    currentBreak = null;
+                }
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+
+        if (currentBreak != null) {
+            int days = (int) ChronoUnit.DAYS.between(currentBreak.getStartDate(), currentBreak.getEndDate()) + 1;
+            currentBreak.setDays(days);
+            breakPeriods.add(currentBreak);
+        }
+
+        return breakPeriods;
+    }
+
+    private int calculateConsecutiveDaysFromToday(List<MedicineClock> records) {
+        if (records.isEmpty()) {
+            return 0;
+        }
+
+        Set<LocalDate> clockDates = records.stream()
+                .filter(r -> r.getClockStatus() == 1 || r.getClockStatus() == 2)
+                .map(MedicineClock::getClockDate)
+                .collect(Collectors.toSet());
+
+        int consecutiveDays = 0;
+        LocalDate expectedDate = LocalDate.now();
+
+        while (clockDates.contains(expectedDate)) {
+            consecutiveDays++;
+            expectedDate = expectedDate.minusDays(1);
+        }
+
+        return consecutiveDays;
     }
 }

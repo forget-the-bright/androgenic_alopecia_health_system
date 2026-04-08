@@ -1,9 +1,12 @@
 package com.hairloss.system.service.impl;
 
+import cn.hutool.core.codec.Base64;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,6 +35,10 @@ import com.volcengine.ark.runtime.model.responses.request.CreateResponsesRequest
 import com.volcengine.ark.runtime.model.responses.request.ResponsesInput;
 import com.volcengine.ark.runtime.model.responses.response.ResponseObject;
 import com.volcengine.ark.runtime.service.ArkService;
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.MinioClient;
+import io.minio.http.Method;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +54,7 @@ import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AI 分析记录服务实现类
@@ -79,6 +87,13 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
     @Value("${ai.analysis.model:}")
     private String model;
 
+
+    @Autowired
+    private MinioClient minioClient;
+
+
+    @Value("${minio.bucket-name:hair-loss-images}")
+    private String bucketName;
     /**
      * 获取请求 IP 地址
      */
@@ -100,6 +115,65 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
             log.warn("获取 IP 地址失败", e);
         }
         return "0.0.0.0";
+    }
+
+    @Override
+    @SneakyThrows
+    public Object getAnalyzePrompt(Long userId, Long imageId1, Long imageId2) {
+        // 会员权限校验
+        Map<String, Object> permissionResult = userMembershipService.checkAnalysisPermission(userId);
+        if (!(Boolean) permissionResult.get("allowed")) {
+            throw new RuntimeException((String) permissionResult.get("reason"));
+        }
+
+        // 验证照片是否存在且属于当前用户
+        UserHairImage image1 = userHairImageService.getById(imageId1);
+        UserHairImage image2 = userHairImageService.getById(imageId2);
+
+        if (image1 == null || image2 == null) {
+            throw new RuntimeException("照片不存在");
+        }
+
+        if (!image1.getUserId().equals(userId) || !image2.getUserId().equals(userId)) {
+            throw new RuntimeException("无权限访问该照片");
+        }
+        // 计算时间间隔
+        String timeInterval = calculateTimeInterval(image1.getUploadDate(), image2.getUploadDate());
+
+        // 构建专业提示词
+        //String prompt = buildAnalysisPrompt(image1, image2, timeInterval);
+        //yaml  2126 token
+        //toml 2401  token
+        //json 2931  token
+        //md 2675 token
+        Map<String, Object> promptMap = buildAnalysisPromptMap(image1, image2, timeInterval);
+        Map<String, Object> imagesInfo = (Map<String, Object>)promptMap.get("images");
+
+        String fileUrl1 = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                .method(Method.GET)
+                .bucket(bucketName)
+                .object(image1.getMinioPath())
+                .expiry(5, TimeUnit.MINUTES)
+                .build());
+
+        String fileUrl2 = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                .method(Method.GET)
+                .bucket(bucketName)
+                .object(image2.getMinioPath())
+                .expiry(5, TimeUnit.MINUTES)
+                .build());
+        imagesInfo.put("图1（较早）-在线链接", fileUrl1);
+        imagesInfo.put("图2（较近）-在线链接", fileUrl2);
+        imagesInfo.put("图片要求", "请根据两个图片的链接去获取图片视觉分析，两张图片都是新生成的链接可以直接访问");
+        // ====================== 关键：生成标准 YAML ======================
+        DumperOptions options = new DumperOptions();
+        options.setPrettyFlow(true);
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setIndent(2);
+        options.setIndicatorIndent(0);
+        Yaml yaml = new Yaml(options);
+        String dump = yaml.dump(promptMap);
+        return promptMap;
     }
 
     @Override
@@ -482,14 +556,14 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
     private Map<String, Object> buildAnalysisPromptMap(UserHairImage image1, UserHairImage image2, String timeInterval) {
         Map<String, Object> prompt = new LinkedHashMap<>();
 
-        // 1. 角色
-        prompt.put("role", "专业皮肤科毛发医生，擅长雄脱诊断与对比分析");
+        // 1. 角色（升级：专业、严谨、皮肤科临床标准）
+        prompt.put("role", "你是一名专业皮肤科临床医生，专注于雄激素性脱发（雄脱）诊断、毛发密度评估、头皮健康分析与病程对比。");
 
-        // 2. 任务
-        prompt.put("task", "对两张不同时间的头皮/脱发照片做专业、严谨、客观对比分析");
+        // 2. 任务（升级：临床级对比分析）
+        prompt.put("task", "请对用户提供的两张不同时间拍摄的头皮脱发照片进行专业、客观、严谨的临床视觉对比分析，判断脱发趋势、毛发密度变化、头皮暴露度变化及改善情况。");
 
-        // 3. 要求
-        prompt.put("rules", "必须基于视觉特征，不编造；仅输出标准JSON，无多余文字、无解释、无markdown；评分客观公正");
+        // 3. 规则（升级：更严格、更精准、AI 不会乱输出）
+        prompt.put("rules", "严格基于图片视觉特征分析，不编造、不臆断、不夸大；评分遵循临床脱发评估标准；必须仅输出标准 JSON，无任何多余文字、无解释、无 markdown、无注释、无格式符号。");
 
         // 4. 图片信息
         Map<String, Object> images = new LinkedHashMap<>();
@@ -544,8 +618,8 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
         // 放入主 prompt
         prompt.put("outputStructure", outputStructure);
 
-        // 最后命令
-        prompt.put("final", "严格按照以上 outputStructure 结构输出，仅返回JSON，无任何多余内容");
+        // 最终指令（升级：更强约束，AI 必按格式输出）
+        prompt.put("final", "请严格按照 outputStructure 结构输出，仅返回标准 JSON，禁止添加任何无关内容、说明、符号或格式。");
 
         // 转成 JSON 字符串返回
         return prompt;

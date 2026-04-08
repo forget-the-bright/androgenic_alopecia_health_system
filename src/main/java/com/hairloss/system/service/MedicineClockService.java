@@ -71,4 +71,8 @@ public interface MedicineClockService extends IService<MedicineClock> {
      * @return 打卡记录详情
      */
     MedicineClock getClockDetail(Long clockId, Long userId);
+    
+    com.hairloss.system.dto.MedicineDetailStats getMedicineDetailStats(Long userId, Long medicineId);
+    
+    java.util.List<com.hairloss.system.dto.MedicineDetailStats> getAllMedicineDetailStats(Long userId);
 }

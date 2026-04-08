@@ -20,6 +20,7 @@ public interface AiAnalysisService extends IService<AiAnalysis> {
      */
     AiAnalysis analyze(Long userId, Long imageId1, Long imageId2);
 
+    Object getAnalyzePrompt(Long userId, Long imageId1, Long imageId2);
     /**
      * 获取用户分析记录列表
      * @param userId 用户 ID
@@ -43,4 +44,5 @@ public interface AiAnalysisService extends IService<AiAnalysis> {
      * @return 分析详情
      */
     AiAnalysis getAnalysisDetail(Long analysisId, Long userId);
+
 }

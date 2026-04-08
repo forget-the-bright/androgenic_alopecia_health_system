@@ -44,6 +44,24 @@ public class AiAnalysisController {
         return Result.success(analysis);
     }
 
+    @PostMapping("/getAnalyzePrompt")
+    @ApiOperation("发起 AI 对比分析的提示词")
+    public Result<Object> getAnalyzePrompt(@RequestParam Long imageId1, @RequestParam Long imageId2) {
+
+
+        if (imageId1 == null || imageId2 == null) {
+            return Result.error("请选择两张照片进行对比");
+        }
+
+        if (imageId1.equals(imageId2)) {
+            return Result.error("请选择两张不同的照片");
+        }
+
+        Long userId = StpUtil.getLoginIdAsLong();
+        Object prompt = aiAnalysisService.getAnalyzePrompt(userId, imageId1, imageId2);
+        return Result.success(prompt);
+    }
+
     @GetMapping("/page")
     @ApiOperation("分页获取分析记录列表")
     public Result<Page<AiAnalysis>> getAnalysisPage(

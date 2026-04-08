@@ -2,6 +2,7 @@ package com.hairloss.system.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.hairloss.system.common.Result;
+import com.hairloss.system.dto.MedicineDetailStats;
 import com.hairloss.system.entity.MedicineClock;
 import com.hairloss.system.service.MedicineClockService;
 import io.swagger.annotations.Api;
@@ -90,5 +91,19 @@ public class MedicineClockController {
     public Result<MedicineClock> getClockDetail(@PathVariable Long clockId) {
         Long userId = StpUtil.getLoginIdAsLong();
         return Result.success(medicineClockService.getClockDetail(clockId, userId));
+    }
+
+    @GetMapping("/detail-stats/{medicineId}")
+    @ApiOperation("获取用药详情统计")
+    public Result<MedicineDetailStats> getMedicineDetailStats(@PathVariable Long medicineId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        return Result.success(medicineClockService.getMedicineDetailStats(userId, medicineId));
+    }
+
+    @GetMapping("/all-detail-stats")
+    @ApiOperation("获取所有用药方案详情统计")
+    public Result<List<MedicineDetailStats>> getAllMedicineDetailStats() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        return Result.success(medicineClockService.getAllMedicineDetailStats(userId));
     }
 }
