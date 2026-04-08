@@ -45,9 +45,7 @@ function apiRequest(options) {
             'satoken': getToken()
         }
     };
-
     var settings = $.extend({}, defaultOptions, options);
-
     // 显示加载动画
     if (settings.showLoading) {
         showGlobalLoading();

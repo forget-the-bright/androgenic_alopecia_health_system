@@ -45,6 +45,8 @@ public class UserHairImageServiceImpl extends ServiceImpl<UserHairImageMapper, U
 
     @Value("${minio.bucket-name:hair-loss-images}")
     private String bucketName;
+    @Value("${minio.endpoint}")
+    private String endpoint;
 
     @Autowired
     private SysOperationLogService sysOperationLogService;
@@ -98,13 +100,15 @@ public class UserHairImageServiceImpl extends ServiceImpl<UserHairImageMapper, U
                     .contentType(file.getContentType())
                     .build());
             inputStream.close();
+            // 生成永久访问 URL(需要 bucket 设置为公共可读)
+            String fileUrl = endpoint + "/" + bucketName + "/" + minioPath;
 
             // 生成访问 URL（7 天有效期）
-            String fileUrl = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+          /*  String fileUrl = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .method(Method.GET)
                     .bucket(bucketName)
                     .object(minioPath)
-                    .build());
+                    .build());*/
 
             // 保存记录
             UserHairImage hairImage = new UserHairImage();

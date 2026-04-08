@@ -2,6 +2,7 @@ package com.hairloss.system.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hairloss.system.common.Result;
 import com.hairloss.system.entity.MembershipPurchaseRecord;
@@ -383,7 +384,7 @@ public class UserMembershipServiceImpl extends ServiceImpl<UserMembershipMapper,
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void incrementUsedCount(Long userId) {
-        UserMembership membership = this.getById(userId);
+        UserMembership membership = this.getOne(Wrappers.lambdaQuery(UserMembership.class).eq(UserMembership::getUserId,userId));
         if (membership != null) {
             int usedCount = membership.getUsedCountCurrentMonth() != null ? 
                 membership.getUsedCountCurrentMonth() : 0;

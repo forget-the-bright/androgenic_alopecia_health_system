@@ -11,12 +11,15 @@
         .navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+
         .navbar-brand, .nav-link {
             color: white !important;
         }
+
         .main-content {
             padding: 20px;
         }
+
         .upload-area {
             border: 2px dashed #667eea;
             border-radius: 10px;
@@ -26,80 +29,97 @@
             margin-bottom: 20px;
             transition: all 0.3s ease;
         }
+
         .upload-area:hover {
             background: #e9ecef;
             border-color: #764ba2;
         }
+
         .image-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 20px;
         }
+
         .image-card {
             background: white;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
             position: relative;
         }
+
         .image-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
+
         .image-card.selected {
             border: 3px solid #667eea;
         }
+
         .image-card img {
             width: 100%;
             height: 200px;
             object-fit: cover;
             cursor: pointer;
         }
+
         .image-card .card-body {
             padding: 12px 15px;
         }
+
         .image-checkbox-wrapper {
             position: absolute;
             top: 10px;
             left: 10px;
             z-index: 10;
         }
+
         .image-checkbox {
             width: 20px;
             height: 20px;
             cursor: pointer;
         }
+
         .filter-bar {
             background: white;
             padding: 15px 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             margin-bottom: 20px;
         }
+
         .btn-group-spacing .btn {
             margin-right: 8px;
         }
+
         .btn-group-spacing .btn:last-child {
             margin-right: 0;
         }
+
         /* 编辑模态框样式 */
         .modal-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+
         .modal-header .btn-close {
             filter: brightness(0) invert(1);
         }
+
         /* 响应式 */
         @media (max-width: 768px) {
             .image-grid {
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
                 gap: 10px;
             }
+
             .image-card img {
                 height: 120px;
             }
+
             .filter-bar {
                 padding: 10px 15px;
             }
@@ -107,267 +127,273 @@
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <div class="d-flex align-items-center">
-                <button class="sidebar-toggle me-2" onclick="toggleSidebar()" title="切换侧边栏">
-                    <span class="toggle-icon">⬅️</span>
-                </button>
-                <a class="navbar-brand" href="/index.html">毛发健康管理系统</a>
-            </div>
-            
-            <div class="d-flex align-items-center">
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
-                    <span class="theme-icon">🌙</span>
-                </button>
-                <div class="language-selector ms-2">
-                    <select onchange="setLanguage(this.value)">
-                        <option value="zh-CN">🇨🇳 中文</option>
-                        <option value="en-US">🇺🇸 English</option>
-                    </select>
-                </div>
-                <a class="nav-link" href="#" onclick="doLogout()">🚪 退出</a>
-            </div>
-        </div>
-    </nav>
-
+<!-- 导航栏 -->
+<nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
-        <div class="row">
-            <!-- 侧边栏 -->
-            <div class="col-md-2 sidebar d-none d-md-block">
-                <nav class="nav flex-column">
-                    <a class="nav-link" href="/index.html">
-                        <span class="icon">📊</span>
-                        <span class="text">数据概览</span>
-                    </a>
-                    <a class="nav-link active" href="/hair-data.html">
-                        <span class="icon">📷</span>
-                        <span class="text">毛发数据</span>
-                    </a>
-                    <a class="nav-link" href="/ai-analysis.html">
-                        <span class="icon">🤖</span>
-                        <span class="text">AI 分析</span>
-                    </a>
-                    <a class="nav-link" href="/medicine.html">
-                        <span class="icon">💊</span>
-                        <span class="text">用药管理</span>
-                    </a>
-                    <a class="nav-link" href="/profile.html">
-                        <span class="icon">👤</span>
-                        <span class="text">个人中心</span>
-                    </a>
-                    <a class="nav-link admin-link" href="/admin.html" style="display: none;">
-                        <span class="icon">⚙️</span>
-                        <span class="text">管理后台</span>
-                    </a>
-                </nav>
+        <div class="d-flex align-items-center">
+            <button class="sidebar-toggle me-2" onclick="toggleSidebar()" title="切换侧边栏">
+                <span class="toggle-icon">⬅️</span>
+            </button>
+            <a class="navbar-brand" href="/index.html">毛发健康管理系统</a>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                <span class="theme-icon">🌙</span>
+            </button>
+            <div class="language-selector ms-2">
+                <select onchange="setLanguage(this.value)">
+                    <option value="zh-CN">🇨🇳 中文</option>
+                    <option value="en-US">🇺🇸 English</option>
+                </select>
             </div>
+            <a class="nav-link" href="#" onclick="doLogout()">🚪 退出</a>
+        </div>
+    </div>
+</nav>
 
-            <!-- 主内容区 -->
-            <div class="col-md-10 main-content">
-                <h4 class="mb-3">📷 毛发数据管理</h4>
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏 -->
+        <div class="col-md-2 sidebar d-none d-md-block">
+            <nav class="nav flex-column">
+                <a class="nav-link" href="/index.html">
+                    <span class="icon">📊</span>
+                    <span class="text">数据概览</span>
+                </a>
+                <a class="nav-link active" href="/hair-data.html">
+                    <span class="icon">📷</span>
+                    <span class="text">毛发数据</span>
+                </a>
+                <a class="nav-link" href="/ai-analysis.html">
+                    <span class="icon">🤖</span>
+                    <span class="text">AI 分析</span>
+                </a>
+                <a class="nav-link" href="/medicine.html">
+                    <span class="icon">💊</span>
+                    <span class="text">用药管理</span>
+                </a>
+                <a class="nav-link" href="/profile.html">
+                    <span class="icon">👤</span>
+                    <span class="text">个人中心</span>
+                </a>
+                <a class="nav-link admin-link" href="/admin.html" style="display: none;">
+                    <span class="icon">⚙️</span>
+                    <span class="text">管理后台</span>
+                </a>
+            </nav>
+        </div>
 
-                <!-- 上传区域 -->
-                <div class="upload-area">
-                    <h5 class="mb-3">📤 上传毛发照片</h5>
-                    <form id="uploadForm" enctype="multipart/form-data">
-                        <div class="row g-2">
-                            <div class="col-md-3 col-sm-6">
-                                <input type="file" class="form-control" id="file" name="file" 
-                                       accept="image/jpeg,image/png" required>
-                            </div>
-                            <div class="col-md-2 col-sm-6">
-                                <select class="form-select" id="part" name="part" required>
-                                    <option value="">选择部位</option>
-                                    <option value="头顶">头顶</option>
-                                    <option value="前额">前额</option>
-                                    <option value="两侧">两侧</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <input type="text" class="form-control" id="remark" name="remark" 
-                                       placeholder="备注（可选）">
-                            </div>
-                            <div class="col-md-2 col-sm-6">
-                                <button type="submit" class="btn btn-primary w-100">📤 上传</button>
-                            </div>
+        <!-- 主内容区 -->
+        <div class="col-md-10 main-content">
+            <h4 class="mb-3">📷 毛发数据管理</h4>
+
+            <!-- 上传区域 -->
+            <div class="upload-area">
+                <h5 class="mb-3">📤 上传毛发照片</h5>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="row g-2">
+                        <div class="col-md-3 col-sm-6">
+                            <input type="file" class="form-control" id="file" name="file"
+                                   accept="image/jpeg,image/png" required>
                         </div>
-                    </form>
-                </div>
-
-                <!-- 筛选栏 -->
-                <div class="filter-bar">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-2">
-                            <label class="form-label small text-muted">部位筛选</label>
-                            <select class="form-select form-select-sm" id="filterPart">
-                                <option value="">全部部位</option>
+                        <div class="col-md-2 col-sm-6">
+                            <select class="form-select" id="part" name="part" required>
+                                <option value="">选择部位</option>
                                 <option value="头顶">头顶</option>
                                 <option value="前额">前额</option>
                                 <option value="两侧">两侧</option>
+                                <option value="后脑勺">后脑勺</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label small text-muted">起始日期</label>
-                            <input type="date" class="form-control form-control-sm" id="startDate">
+                        <div class="col-md-3 col-sm-6">
+                            <input type="text" class="form-control" id="remark" name="remark"
+                                   placeholder="备注（可选）">
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label small text-muted">结束日期</label>
-                            <input type="date" class="form-control form-control-sm" id="endDate">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted d-block">&nbsp;</label>
-                            <div class="btn-group-spacing">
-                                <button class="btn btn-primary btn-sm" id="searchBtn">🔍 查询</button>
-                                <button class="btn btn-outline-secondary btn-sm" id="selectAllBtn">✅ 全选</button>
-                                <button class="btn btn-outline-secondary btn-sm" id="invertSelectBtn">🔄 反选</button>
-                                <button class="btn btn-outline-danger btn-sm" id="batchDeleteBtn" disabled>🗑️ 批量删除</button>
-                                <button class="btn btn-outline-info btn-sm" id="clearFilterBtn">🔄 重置筛选</button>
-                            </div>
+                        <div class="col-md-2 col-sm-6">
+                            <button type="submit" class="btn btn-primary w-100">📤 上传</button>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-12 text-end">
-                            <span class="badge bg-primary" id="selectedCount">已选择 0 项</span>
-                            <span class="badge bg-secondary ms-2" id="totalCount">共 0 项</span>
-                        </div>
-                    </div>
-                </div>
+                </form>
+            </div>
 
-                <!-- 图片列表 -->
-                <div class="image-grid" id="imageGrid">
-                    <!-- 动态加载 -->
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">部位筛选</label>
+                        <select class="form-select form-select-sm" id="filterPart">
+                            <option value="">全部部位</option>
+                            <option value="头顶">头顶</option>
+                            <option value="前额">前额</option>
+                            <option value="两侧">两侧</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">起始日期</label>
+                        <input type="date" class="form-control form-control-sm" id="startDate">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">结束日期</label>
+                        <input type="date" class="form-control form-control-sm" id="endDate">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted d-block">&nbsp;</label>
+                        <div class="btn-group-spacing">
+                            <button class="btn btn-primary btn-sm" id="searchBtn">🔍 查询</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="selectAllBtn">✅ 全选</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="invertSelectBtn">🔄 反选</button>
+                            <button class="btn btn-outline-danger btn-sm" id="batchDeleteBtn" disabled>🗑️ 批量删除
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" id="clearFilterBtn">🔄 重置筛选</button>
+                        </div>
+                    </div>
                 </div>
+                <div class="row mt-2">
+                    <div class="col-12 text-end">
+                        <span class="badge bg-primary" id="selectedCount">已选择 0 项</span>
+                        <span class="badge bg-secondary ms-2" id="totalCount">共 0 项</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图片列表 -->
+            <div class="image-grid" id="imageGrid">
+                <!-- 动态加载 -->
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 预览模态框 -->
-    <div class="modal fade" id="previewModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">📷 照片预览</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- 预览模态框 -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">📷 照片预览</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center bg-light" id="previewContainer"
+                 style="overflow: hidden; position: relative; height: 80vh; cursor: grab;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; overflow: hidden; transform: translateZ(0);">
+                    <img id="previewImage" src=""
+                         style="max-width: 100%; max-height: 100%; transform-origin: center center; user-select: none; -webkit-user-select: none; will-change: transform; pointer-events: none;">
                 </div>
-                <div class="modal-body text-center bg-light" id="previewContainer" style="overflow: hidden; position: relative; height: 80vh; cursor: grab;">
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; overflow: hidden; transform: translateZ(0);">
-                        <img id="previewImage" src="" style="max-width: 100%; max-height: 100%; transform-origin: center center; user-select: none; -webkit-user-select: none; will-change: transform; pointer-events: none;">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomOut()">➖ 缩小</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetZoom()">🔄 重置</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomIn()">➕ 放大</button>
+                <span class="ms-2 text-muted" id="zoomLevel">100%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑模态框 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">✏️ 编辑照片信息</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editImageId">
+                <form id="editForm">
+                    <div class="mb-3">
+                        <label class="form-label">拍摄部位</label>
+                        <select class="form-select" id="editPart" required>
+                            <option value="头顶">头顶</option>
+                            <option value="前额">前额</option>
+                            <option value="两侧">两侧</option>
+                            <option value="后脑勺">后脑勺</option>
+                        </select>
                     </div>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomOut()">➖ 缩小</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetZoom()">🔄 重置</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomIn()">➕ 放大</button>
-                    <span class="ms-2 text-muted" id="zoomLevel">100%</span>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">拍摄时间</label>
+                        <input type="datetime-local" class="form-control" id="editUploadTime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-control" id="editRemark" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">💾 保存</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 编辑模态框 -->
-    <div class="modal fade" id="editModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">✏️ 编辑照片信息</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editImageId">
-                    <form id="editForm">
-                        <div class="mb-3">
-                            <label class="form-label">拍摄部位</label>
-                            <select class="form-select" id="editPart" required>
-                                <option value="头顶">头顶</option>
-                                <option value="前额">前额</option>
-                                <option value="两侧">两侧</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">拍摄时间</label>
-                            <input type="datetime-local" class="form-control" id="editUploadTime" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">备注</label>
-                            <textarea class="form-control" id="editRemark" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary" onclick="saveEdit()">💾 保存</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="/static/js/api.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+    var allImages = [];
+    var editModal = null;
 
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/common.js"></script>
-    <script src="/static/js/layout.js"></script>
-    <script>
-        var allImages = [];
-        var editModal = null;
+    $(function () {
+        // 验证登录状态
+        checkLoginAsync(function () {
+            editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            loadImages();
+            checkAdminLink();
+        });
 
-        $(function() {
-            // 验证登录状态
-            checkLoginAsync(function() {
-                editModal = new bootstrap.Modal(document.getElementById('editModal'));
-                loadImages();
-                checkAdminLink();
+        // 全选按钮
+        $('#selectAllBtn').click(function () {
+            var isAllSelected = $('.image-checkbox:checked').length === $('.image-checkbox').length;
+            $('.image-checkbox').prop('checked', !isAllSelected);
+            updateImageCardStyle();
+            updateSelectCount();
+            updateBatchDeleteBtn();
+            $(this).text(isAllSelected ? '✅ 全选' : '❌ 取消全选');
+        });
+
+        // 反选按钮
+        $('#invertSelectBtn').click(function () {
+            $('.image-checkbox').each(function () {
+                $(this).prop('checked', !$(this).prop('checked'));
             });
+            updateImageCardStyle();
+            updateSelectCount();
+            updateBatchDeleteBtn();
+            $('#selectAllBtn').text('✅ 全选');
+        });
 
-            // 全选按钮
-            $('#selectAllBtn').click(function() {
-                var isAllSelected = $('.image-checkbox:checked').length === $('.image-checkbox').length;
-                $('.image-checkbox').prop('checked', !isAllSelected);
-                updateImageCardStyle();
-                updateSelectCount();
-                updateBatchDeleteBtn();
-                $(this).text(isAllSelected ? '✅ 全选' : '❌ 取消全选');
-            });
+        // 查询按钮
+        $('#searchBtn').click(function () {
+            loadImages();
+        });
 
-            // 反选按钮
-            $('#invertSelectBtn').click(function() {
-                $('.image-checkbox').each(function() {
-                    $(this).prop('checked', !$(this).prop('checked'));
-                });
-                updateImageCardStyle();
-                updateSelectCount();
-                updateBatchDeleteBtn();
-                $('#selectAllBtn').text('✅ 全选');
-            });
+        // 重置筛选
+        $('#clearFilterBtn').click(function () {
+            $('#filterPart').val('');
+            $('#startDate').val('');
+            $('#endDate').val('');
+            loadImages();
+        });
 
-            // 查询按钮
-            $('#searchBtn').click(function() {
-                loadImages();
-            });
+        // 上传表单
+        $('#uploadForm').submit(function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
 
-            // 重置筛选
-            $('#clearFilterBtn').click(function() {
-                $('#filterPart').val('');
-                $('#startDate').val('');
-                $('#endDate').val('');
-                loadImages();
-            });
-
-            // 上传表单
-            $('#uploadForm').submit(function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-
-                apiRequest('/api/image/upload', {
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false
-                }, function(res) {
+            apiRequest({
+                url: '/api/image/upload',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
                     if (res.code === 200) {
                         showSuccess('上传成功');
                         $('#uploadForm')[0].reset();
@@ -375,70 +401,72 @@
                     } else {
                         showError(res.msg || '上传失败');
                     }
-                }, function(xhr) {
+                },
+                error: function (xhr) {
                     showError('上传失败：' + (xhr.responseJSON?.msg || '网络错误'));
-                });
-            });
-
-            // 批量删除
-            $('#batchDeleteBtn').click(function() {
-                var selectedIds = [];
-                $('.image-checkbox:checked').each(function() {
-                    selectedIds.push($(this).data('id'));
-                });
-
-                if (selectedIds.length === 0) {
-                    showError('请选择要删除的照片');
-                    return;
                 }
-
-                showConfirm('确定要删除选中的 ' + selectedIds.length + ' 张照片吗？', '确认删除', function() {
-                    apiPost('/api/image/batch-delete', selectedIds, function(res) {
-                        if (res.code === 200) {
-                            showSuccess('删除成功');
-                            loadImages();
-                        } else {
-                            showError(res.msg || '删除失败');
-                        }
-                    });
-                });
-            });
-
-            // 监听复选框变化
-            $(document).on('change', '.image-checkbox', function() {
-                updateImageCardStyle();
-                updateSelectCount();
-                updateBatchDeleteBtn();
             });
         });
 
-        function loadImages() {
-            var part = $('#filterPart').val();
-            var startDate = $('#startDate').val();
-            var endDate = $('#endDate').val();
+        // 批量删除
+        $('#batchDeleteBtn').click(function () {
+            var selectedIds = [];
+            $('.image-checkbox:checked').each(function () {
+                selectedIds.push($(this).data('id'));
+            });
 
-            // 构建查询参数
-            var params = [];
-            if (part) params.push('part=' + encodeURIComponent(part));
-            if (startDate) params.push('startDate=' + startDate);
-            if (endDate) params.push('endDate=' + endDate);
+            if (selectedIds.length === 0) {
+                showError('请选择要删除的照片');
+                return;
+            }
 
-            var queryString = params.length > 0 ? '?' + params.join('&') : '';
+            showConfirm('确定要删除选中的 ' + selectedIds.length + ' 张照片吗？', '确认删除', function () {
+                apiPost('/api/image/batch-delete', selectedIds, function (res) {
+                    if (res.code === 200) {
+                        showSuccess('删除成功');
+                        loadImages();
+                    } else {
+                        showError(res.msg || '删除失败');
+                    }
+                });
+            });
+        });
 
-            apiGet('/api/image/list' + queryString, function(res) {
-                if (res.code === 200) {
-                    allImages = res.data || [];
+        // 监听复选框变化
+        $(document).on('change', '.image-checkbox', function () {
+            updateImageCardStyle();
+            updateSelectCount();
+            updateBatchDeleteBtn();
+        });
+    });
 
-                    var html = '';
-                    if (allImages.length > 0) {
-                        allImages.forEach(function(img) {
-                            // 构建显示时间：优先使用 uploadTime，否则使用 uploadDate
-                            var displayTime = img.uploadTime || img.uploadDate || '-';
-                            if (displayTime.length > 10) {
-                                displayTime = displayTime.substring(0, 16).replace('T', ' ');
-                            }
+    function loadImages() {
+        var part = $('#filterPart').val();
+        var startDate = $('#startDate').val();
+        var endDate = $('#endDate').val();
 
-                            html += `
+        // 构建查询参数
+        var params = [];
+        if (part) params.push('part=' + encodeURIComponent(part));
+        if (startDate) params.push('startDate=' + startDate);
+        if (endDate) params.push('endDate=' + endDate);
+
+        var queryString = params.length > 0 ? '?' + params.join('&') : '';
+
+        apiGet('/api/image/list' + queryString, function (res) {
+            if (res.code === 200) {
+                allImages = res.data || [];
+
+                var html = '';
+                if (allImages.length > 0) {
+                    allImages.forEach(function (img) {
+                        // 构建显示时间：优先使用 uploadTime，否则使用 uploadDate
+                        var displayTime = img.uploadTime || img.uploadDate || '-';
+                        if (displayTime.length > 10) {
+                            displayTime = displayTime.substring(0, 16).replace('T', ' ');
+                        }
+
+                        html += `
                                 <div class="image-card" data-id="${img.id}">
                                     <div class="image-checkbox-wrapper">
                                         <input class="image-checkbox form-check-input" type="checkbox" data-id="${img.id}">
@@ -458,255 +486,255 @@
                                     </div>
                                 </div>
                             `;
-                        });
-                    } else {
-                        html = '<div class="col-12 text-center py-5"><p class="text-muted">📭 暂无照片数据</p></div>';
-                    }
-                    $('#imageGrid').html(html);
-                    $('#totalCount').text('共 ' + allImages.length + ' 项');
-                    updateSelectCount();
-                    updateBatchDeleteBtn();
-                    $('#selectAllBtn').text('✅ 全选');
-                }
-            });
-        }
-
-        // 更新图片卡片选中样式
-        function updateImageCardStyle() {
-            $('.image-card').each(function() {
-                var id = $(this).data('id');
-                var isChecked = $('.image-checkbox[data-id="' + id + '"]').is(':checked');
-                if (isChecked) {
-                    $(this).addClass('selected');
+                    });
                 } else {
-                    $(this).removeClass('selected');
+                    html = '<div class="col-12 text-center py-5"><p class="text-muted">📭 暂无照片数据</p></div>';
                 }
-            });
-        }
-
-        // 更新已选择数量显示
-        function updateSelectCount() {
-            var count = $('.image-checkbox:checked').length;
-            $('#selectedCount').text('已选择 ' + count + ' 项');
-        }
-
-        // 更新批量删除按钮状态
-        function updateBatchDeleteBtn() {
-            var hasSelected = $('.image-checkbox:checked').length > 0;
-            $('#batchDeleteBtn').prop('disabled', !hasSelected);
-        }
-
-        function previewImage(url) {
-            $('#previewImage').attr('src', url);
-            currentZoom = 1;
-            updateZoom();
-            new bootstrap.Modal(document.getElementById('previewModal')).show();
-        }
-
-        // 图片缩放功能
-        var currentZoom = 1;
-        var zoomStep = 0.25;
-        var minZoom = 0.25;
-        var maxZoom = 5;
-
-        // 图片拖拽功能
-        var isDragging = false;
-        var startX = 0, startY = 0;
-        var translateX = 0, translateY = 0;
-
-        // 使用 requestAnimationFrame 优化拖拽性能
-        var pendingTransform = false;
-        var pendingZoom = 1;
-        var pendingX = 0;
-        var pendingY = 0;
-
-        function updateTransform() {
-            var img = document.getElementById('previewImage');
-            img.style.transform = 'scale(' + pendingZoom + ') translate(' + pendingX + 'px, ' + pendingY + 'px)';
-            pendingTransform = false;
-        }
-
-        function scheduleTransform() {
-            if (!pendingTransform) {
-                pendingTransform = true;
-                requestAnimationFrame(updateTransform);
+                $('#imageGrid').html(html);
+                $('#totalCount').text('共 ' + allImages.length + ' 项');
+                updateSelectCount();
+                updateBatchDeleteBtn();
+                $('#selectAllBtn').text('✅ 全选');
             }
-        }
+        });
+    }
 
-        function updateZoom() {
-            pendingZoom = currentZoom;
-            pendingX = translateX;
-            pendingY = translateY;
-            scheduleTransform();
-            $('#zoomLevel').text(Math.round(currentZoom * 100) + '%');
-            updateCursor();
-        }
-
-        function updateCursor() {
-            var $container = $('#previewContainer');
-            if (currentZoom > 1) {
-                $container.css('cursor', isDragging ? 'grabbing' : 'grab');
-                $container.attr('title', '拖动图片查看 | 滚轮缩放');
+    // 更新图片卡片选中样式
+    function updateImageCardStyle() {
+        $('.image-card').each(function () {
+            var id = $(this).data('id');
+            var isChecked = $('.image-checkbox[data-id="' + id + '"]').is(':checked');
+            if (isChecked) {
+                $(this).addClass('selected');
             } else {
-                $container.css('cursor', 'default');
-                $container.attr('title', '');
+                $(this).removeClass('selected');
             }
-        }
+        });
+    }
 
-        function zoomIn() {
-            if (currentZoom < maxZoom) {
-                currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-                updateZoom();
-            }
-        }
+    // 更新已选择数量显示
+    function updateSelectCount() {
+        var count = $('.image-checkbox:checked').length;
+        $('#selectedCount').text('已选择 ' + count + ' 项');
+    }
 
-        function zoomOut() {
-            if (currentZoom > minZoom) {
-                currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-                // 缩放时重置位置
-                if (currentZoom <= 1) {
-                    translateX = 0;
-                    translateY = 0;
-                }
-                updateZoom();
-            }
-        }
+    // 更新批量删除按钮状态
+    function updateBatchDeleteBtn() {
+        var hasSelected = $('.image-checkbox:checked').length > 0;
+        $('#batchDeleteBtn').prop('disabled', !hasSelected);
+    }
 
-        function resetZoom() {
-            currentZoom = 1;
-            translateX = 0;
-            translateY = 0;
+    function previewImage(url) {
+        $('#previewImage').attr('src', url);
+        currentZoom = 1;
+        updateZoom();
+        new bootstrap.Modal(document.getElementById('previewModal')).show();
+    }
+
+    // 图片缩放功能
+    var currentZoom = 1;
+    var zoomStep = 0.25;
+    var minZoom = 0.25;
+    var maxZoom = 5;
+
+    // 图片拖拽功能
+    var isDragging = false;
+    var startX = 0, startY = 0;
+    var translateX = 0, translateY = 0;
+
+    // 使用 requestAnimationFrame 优化拖拽性能
+    var pendingTransform = false;
+    var pendingZoom = 1;
+    var pendingX = 0;
+    var pendingY = 0;
+
+    function updateTransform() {
+        var img = document.getElementById('previewImage');
+        img.style.transform = 'scale(' + pendingZoom + ') translate(' + pendingX + 'px, ' + pendingY + 'px)';
+        pendingTransform = false;
+    }
+
+    function scheduleTransform() {
+        if (!pendingTransform) {
+            pendingTransform = true;
+            requestAnimationFrame(updateTransform);
+        }
+    }
+
+    function updateZoom() {
+        pendingZoom = currentZoom;
+        pendingX = translateX;
+        pendingY = translateY;
+        scheduleTransform();
+        $('#zoomLevel').text(Math.round(currentZoom * 100) + '%');
+        updateCursor();
+    }
+
+    function updateCursor() {
+        var $container = $('#previewContainer');
+        if (currentZoom > 1) {
+            $container.css('cursor', isDragging ? 'grabbing' : 'grab');
+            $container.attr('title', '拖动图片查看 | 滚轮缩放');
+        } else {
+            $container.css('cursor', 'default');
+            $container.attr('title', '');
+        }
+    }
+
+    function zoomIn() {
+        if (currentZoom < maxZoom) {
+            currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
             updateZoom();
         }
+    }
 
-        // 鼠标滚轮缩放
-        $(document).on('wheel', '#previewModal', function(e) {
-            if ($('#previewModal').hasClass('show')) {
-                e.preventDefault();
-                if (e.originalEvent.deltaY < 0) {
-                    zoomIn();
-                } else {
-                    zoomOut();
-                }
+    function zoomOut() {
+        if (currentZoom > minZoom) {
+            currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+            // 缩放时重置位置
+            if (currentZoom <= 1) {
+                translateX = 0;
+                translateY = 0;
             }
-        });
+            updateZoom();
+        }
+    }
 
-        // 模态框关闭时重置缩放
-        $('#previewModal').on('hidden.bs.modal', function() {
-            resetZoom();
-        });
+    function resetZoom() {
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        updateZoom();
+    }
 
-        // 图片拖拽功能 - 鼠标按下
-        $('#previewContainer').on('mousedown', function(e) {
-            if (currentZoom <= 1) return;
-            isDragging = true;
-            startX = e.pageX - translateX;
-            startY = e.pageY - translateY;
-            $('#previewContainer').css('cursor', 'grabbing');
+    // 鼠标滚轮缩放
+    $(document).on('wheel', '#previewModal', function (e) {
+        if ($('#previewModal').hasClass('show')) {
             e.preventDefault();
-        });
-
-        // 图片拖拽功能 - 鼠标移动（使用 requestAnimationFrame 优化）
-        var ticking = false;
-        $(document).on('mousemove', function(e) {
-            if (!isDragging || ticking) return;
-            
-            ticking = true;
-            requestAnimationFrame(function() {
-                translateX = e.pageX - startX;
-                translateY = e.pageY - startY;
-                pendingX = translateX;
-                pendingY = translateY;
-                scheduleTransform();
-                ticking = false;
-            });
-        });
-
-        // 图片拖拽功能 - 鼠标释放
-        $(document).on('mouseup mouseleave', function() {
-            if (isDragging) {
-                isDragging = false;
-                updateCursor();
+            if (e.originalEvent.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
             }
-        });
+        }
+    });
 
-        // 触摸支持（移动端）
-        $('#previewContainer').on('touchstart', function(e) {
-            if (currentZoom <= 1) return;
-            isDragging = true;
-            var touch = e.originalEvent.touches[0];
-            startX = touch.pageX - translateX;
-            startY = touch.pageY - translateY;
-            e.preventDefault();
-        });
+    // 模态框关闭时重置缩放
+    $('#previewModal').on('hidden.bs.modal', function () {
+        resetZoom();
+    });
 
-        $('#previewContainer').on('touchmove', function(e) {
-            if (!isDragging || currentZoom <= 1) return;
-            var touch = e.originalEvent.touches[0];
-            translateX = touch.pageX - startX;
-            translateY = touch.pageY - startY;
+    // 图片拖拽功能 - 鼠标按下
+    $('#previewContainer').on('mousedown', function (e) {
+        if (currentZoom <= 1) return;
+        isDragging = true;
+        startX = e.pageX - translateX;
+        startY = e.pageY - translateY;
+        $('#previewContainer').css('cursor', 'grabbing');
+        e.preventDefault();
+    });
+
+    // 图片拖拽功能 - 鼠标移动（使用 requestAnimationFrame 优化）
+    var ticking = false;
+    $(document).on('mousemove', function (e) {
+        if (!isDragging || ticking) return;
+
+        ticking = true;
+        requestAnimationFrame(function () {
+            translateX = e.pageX - startX;
+            translateY = e.pageY - startY;
             pendingX = translateX;
             pendingY = translateY;
             scheduleTransform();
-            e.preventDefault();
+            ticking = false;
         });
+    });
 
-        $('#previewContainer').on('touchend', function() {
+    // 图片拖拽功能 - 鼠标释放
+    $(document).on('mouseup mouseleave', function () {
+        if (isDragging) {
             isDragging = false;
             updateCursor();
-        });
+        }
+    });
 
-        function openEditModal(id, part, remark, uploadTime) {
-            $('#editImageId').val(id);
-            $('#editPart').val(part);
-            $('#editRemark').val(remark || '');
-            // 格式化时间为 datetime-local 格式
-            if (uploadTime) {
-                $('#editUploadTime').val(toDateTimeLocal(uploadTime));
-            }
-            editModal.show();
+    // 触摸支持（移动端）
+    $('#previewContainer').on('touchstart', function (e) {
+        if (currentZoom <= 1) return;
+        isDragging = true;
+        var touch = e.originalEvent.touches[0];
+        startX = touch.pageX - translateX;
+        startY = touch.pageY - translateY;
+        e.preventDefault();
+    });
+
+    $('#previewContainer').on('touchmove', function (e) {
+        if (!isDragging || currentZoom <= 1) return;
+        var touch = e.originalEvent.touches[0];
+        translateX = touch.pageX - startX;
+        translateY = touch.pageY - startY;
+        pendingX = translateX;
+        pendingY = translateY;
+        scheduleTransform();
+        e.preventDefault();
+    });
+
+    $('#previewContainer').on('touchend', function () {
+        isDragging = false;
+        updateCursor();
+    });
+
+    function openEditModal(id, part, remark, uploadTime) {
+        $('#editImageId').val(id);
+        $('#editPart').val(part);
+        $('#editRemark').val(remark || '');
+        // 格式化时间为 datetime-local 格式
+        if (uploadTime) {
+            $('#editUploadTime').val(toDateTimeLocal(uploadTime));
+        }
+        editModal.show();
+    }
+
+    function saveEdit() {
+        var id = $('#editImageId').val();
+        var part = $('#editPart').val();
+        var remark = $('#editRemark').val();
+        var uploadTime = $('#editUploadTime').val();
+
+        if (!part) {
+            showError('请选择部位');
+            return;
         }
 
-        function saveEdit() {
-            var id = $('#editImageId').val();
-            var part = $('#editPart').val();
-            var remark = $('#editRemark').val();
-            var uploadTime = $('#editUploadTime').val();
-
-            if (!part) {
-                showError('请选择部位');
-                return;
+        apiPut('/api/image/' + id, {
+            part: part,
+            remark: remark,
+            uploadTime: uploadTime
+        }, function (res) {
+            if (res.code === 200) {
+                showSuccess('保存成功');
+                editModal.hide();
+                loadImages();
+            } else {
+                showError(res.msg || '保存失败');
             }
+        }, function (xhr) {
+            showError('保存失败：' + (xhr.responseJSON?.msg || '网络错误'));
+        });
+    }
 
-            apiPut('/api/image/' + id, {
-                part: part,
-                remark: remark,
-                uploadTime:uploadTime
-            }, function(res) {
+    function deleteImage(id) {
+        showConfirm('确定要删除这张照片吗？', '确认删除', function () {
+            apiDelete('/api/image/' + id, function (res) {
                 if (res.code === 200) {
-                    showSuccess('保存成功');
-                    editModal.hide();
+                    showSuccess('删除成功');
                     loadImages();
                 } else {
-                    showError(res.msg || '保存失败');
+                    showError(res.msg || '删除失败');
                 }
-            }, function(xhr) {
-                showError('保存失败：' + (xhr.responseJSON?.msg || '网络错误'));
             });
-        }
-
-        function deleteImage(id) {
-            showConfirm('确定要删除这张照片吗？', '确认删除', function() {
-                apiDelete('/api/image/' + id, function(res) {
-                    if (res.code === 200) {
-                        showSuccess('删除成功');
-                        loadImages();
-                    } else {
-                        showError(res.msg || '删除失败');
-                    }
-                });
-            });
-        }
-    </script>
+        });
+    }
+</script>
 </body>
 </html>

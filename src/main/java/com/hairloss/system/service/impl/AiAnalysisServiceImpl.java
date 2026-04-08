@@ -293,11 +293,11 @@ public class AiAnalysisServiceImpl extends ServiceImpl<AiAnalysisMapper, AiAnaly
             // 构建消息内容
             MessageContent content = MessageContent.builder()
                     .addListItem(InputContentItemImage.builder()
-                            .imageUrl(image1.getFileUrl().substring(0, image1.getFileUrl().indexOf("?")))
+                            .imageUrl(image1.getFileUrl())
                             .detail("high")
                             .build())
                     .addListItem(InputContentItemImage.builder()
-                            .imageUrl(image2.getFileUrl().substring(0, image2.getFileUrl().indexOf("?")))
+                            .imageUrl(image2.getFileUrl())
                             .detail("high")
                             .build())
                     .addListItem(InputContentItemText.builder().text(prompt).build())
